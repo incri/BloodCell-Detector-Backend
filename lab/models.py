@@ -6,6 +6,14 @@ class BloodTest(models.Model):
     description = models.TextField()
     updated_at = models.DateTimeField(auto_now=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    
+
+    def __str__(self) -> str:
+        return self.title
+    
+    class Meta:
+        ordering = ['created_at']
+
 
 class Patient(models.Model):
     first_name = models.CharField(max_length=255)
@@ -13,6 +21,12 @@ class Patient(models.Model):
     email = models.EmailField(unique=True)
     phone = models.CharField(max_length=255)
     birth_date = models.DateField()
+
+    def __str__(self) -> str:
+        return self.first_name + self.last_name
+    
+    class Meta:
+        ordering = ['first_name', 'last_name']
 
 class Address(models.Model):
     street = models.CharField(max_length=255)
