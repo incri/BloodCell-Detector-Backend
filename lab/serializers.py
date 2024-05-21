@@ -5,7 +5,7 @@ class BloodTestSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = models.BloodTest
-        fields = ['id', 'title', 'description', 'detection']
+        fields = ['id', 'title', 'description', 'patient']
     
 
 class PatientSerializer(serializers.ModelSerializer):
@@ -27,4 +27,8 @@ class AddressSerializer(serializers.ModelSerializer):
 class ResultSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Result
-        fields = ['id', 'created_at', 'description', 'blood_test' ]
+        fields = ['id', 'created_at', 'description']
+
+    def create(self, validated_data):
+        blood_test_id = self.context['blood_test_id']
+        return models.Result.objects.create(bloodtest_id = blood_test_id, **validated_data)
