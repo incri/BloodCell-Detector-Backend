@@ -1,10 +1,10 @@
 from django.db import models
-from uuid import uuid5
+from uuid import uuid4
 
 # Create your models here.
 
 class Patient(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid5)
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
     email = models.EmailField(unique=True)
@@ -38,7 +38,7 @@ class BloodTest(models.Model):
                                 (DETECTION_STATUS_FAILED, 'Failed'),
                                 ]
     
-    id = models.UUIDField(primary_key=True, default=uuid5)
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)    
     title = models.CharField(max_length=255)
     description = models.TextField()
     updated_at = models.DateTimeField(auto_now=True)
@@ -58,7 +58,7 @@ class BloodTest(models.Model):
 
 
 class Result(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid5)
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)    
     bloodtest = models.ForeignKey(BloodTest, on_delete=models.CASCADE, related_name='results')
     description = models.TextField()
     created_at = models.DateField(auto_now_add=True)
