@@ -10,3 +10,20 @@ class BloodTestFilter(FilterSet):
             'title': ['exact'],
             'detection_status' : ['exact']
         }
+
+
+class PatientFilter(FilterSet):
+    class Meta:
+        model = models.Patient
+        fields = {
+            'birth_date' : ['lt', 'gt'],
+        }
+
+
+class ResultFilter(FilterSet):
+    class Meta:
+        model = models.Result
+        fields = {
+            'created_at' : ['lt', 'gt'],
+            'bloodtest_id': ['exact'],
+        }

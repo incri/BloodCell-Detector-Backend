@@ -1,16 +1,19 @@
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.viewsets import ModelViewSet
-from rest_framework.filters import SearchFilter
+from rest_framework.filters import SearchFilter, OrderingFilter
 from . import models, serializers
 from . import filters
+from  .pagination import DefaultPagination
 
 class BloodTestViewSet(ModelViewSet):
     queryset = models.BloodTest.objects.all()
     serializer_class = serializers.BloodTestSerializer
 
-    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_class = filters.BloodTestFilter
+    pagination_class = DefaultPagination
     search_fields = ['title', 'description']
+    ordering_fields = ['created_at']
 
 
 
@@ -28,6 +31,12 @@ class PatientViewSet(ModelViewSet):
     queryset = models.Patient.objects.all()
     serializer_class = serializers.PatientSerializer
 
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_class = filters.PatientFilter
+    pagination_class = DefaultPagination
+    search_fields = ['first_name', 'last_name','phone' ]
+    ordering_fields = ['first_name']
+
 class ResultViewSet(ModelViewSet):
     serializer_class = serializers.ResultSerializer
 
@@ -37,3 +46,10 @@ class ResultViewSet(ModelViewSet):
 
     def get_serializer_context(self):
         return {'blood_test_id': self.kwargs['blood_test_pk']}
+    
+
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_class = filters.ResultFilter
+    pagination_class = DefaultPagination
+    search_fields = ['description']
+    ordering_fields = ['created_at']
