@@ -50,6 +50,7 @@ THIRD_PARTY_APPS = [
     "rest_framework",
     "debug_toolbar",
     "django_filters",
+    "djoser",
 ]
 
 LOCAL_APPS = [
@@ -151,4 +152,21 @@ INTERNAL_IPS = [
     "127.0.0.1",
 ]
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        
+    ),
+}
+
+SIMPLE_JWT = {
+   'AUTH_HEADER_TYPES': ('BEARER',),
+}
+
 AUTH_USER_MODEL = 'core.User'
+
+DJOSER = {
+    'SERIALIZERS': {
+        'user_create': 'core.serializers.UserCreateSerializer'
+    }
+}
