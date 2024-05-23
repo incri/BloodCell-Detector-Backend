@@ -3,7 +3,8 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.filters import SearchFilter, OrderingFilter
 from . import models, serializers
 from . import filters
-from  .pagination import DefaultPagination
+from .pagination import DefaultPagination
+
 
 class BloodTestViewSet(ModelViewSet):
     queryset = models.BloodTest.objects.all()
@@ -12,20 +13,19 @@ class BloodTestViewSet(ModelViewSet):
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_class = filters.BloodTestFilter
     pagination_class = DefaultPagination
-    search_fields = ['title', 'description']
-    ordering_fields = ['created_at']
-
-
+    search_fields = ["title", "description"]
+    ordering_fields = ["created_at"]
 
 
 class AddressViewSet(ModelViewSet):
     serializer_class = serializers.AddressSerializer
 
     def get_queryset(self):
-        return models.Address.objects.filter(patient_id = self.kwargs['patient_pk'])
+        return models.Address.objects.filter(patient_id=self.kwargs["patient_pk"])
 
     def get_serializer_context(self):
-        return {'patient_id': self.kwargs['patient_pk']}
+        return {"patient_id": self.kwargs["patient_pk"]}
+
 
 class PatientViewSet(ModelViewSet):
     queryset = models.Patient.objects.all()
@@ -34,22 +34,21 @@ class PatientViewSet(ModelViewSet):
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_class = filters.PatientFilter
     pagination_class = DefaultPagination
-    search_fields = ['first_name', 'last_name','phone' ]
-    ordering_fields = ['first_name']
+    search_fields = ["first_name", "last_name", "phone"]
+    ordering_fields = ["first_name"]
+
 
 class ResultViewSet(ModelViewSet):
     serializer_class = serializers.ResultSerializer
 
     def get_queryset(self):
-        return models.Result.objects.filter(bloodtest_id = self.kwargs['blood_test_pk'])
-
+        return models.Result.objects.filter(bloodtest_id=self.kwargs["blood_test_pk"])
 
     def get_serializer_context(self):
-        return {'blood_test_id': self.kwargs['blood_test_pk']}
-    
+        return {"blood_test_id": self.kwargs["blood_test_pk"]}
 
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_class = filters.ResultFilter
     pagination_class = DefaultPagination
-    search_fields = ['description']
-    ordering_fields = ['created_at']
+    search_fields = ["description"]
+    ordering_fields = ["created_at"]
