@@ -54,6 +54,7 @@ THIRD_PARTY_APPS = [
 
 LOCAL_APPS = [
     "lab",
+    "core",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -149,3 +150,5 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 INTERNAL_IPS = [
     "127.0.0.1",
 ]
+
+AUTH_USER_MODEL = 'core.User'
