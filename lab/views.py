@@ -7,7 +7,7 @@ from .pagination import DefaultPagination
 
 
 class BloodTestViewSet(ModelViewSet):
-    queryset = models.BloodTest.objects.prefetch_related("images").all()
+    queryset = models.BloodTest.objects.prefetch_related("images","results").all()
     serializer_class = serializers.BloodTestSerializer
 
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
@@ -48,7 +48,7 @@ class AddressViewSet(ModelViewSet):
 
 
 class PatientViewSet(ModelViewSet):
-    queryset = models.Patient.objects.all()
+    queryset = models.Patient.objects.prefetch_related("blood_tests").all()
     serializer_class = serializers.PatientSerializer
 
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
@@ -62,7 +62,7 @@ class ResultViewSet(ModelViewSet):
     serializer_class = serializers.ResultSerializer
 
     def get_queryset(self):
-        return models.Result.objects.filter(bloodtest_id=self.kwargs["blood_test_pk"])
+        return models.Result.objects.prefetch_related("result_images").filter(bloodtest_id=self.kwargs["blood_test_pk"])
 
     def get_serializer_context(self):
         return {"blood_test_id": self.kwargs["blood_test_pk"]}
