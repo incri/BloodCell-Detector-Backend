@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
+from datetime import timedelta
 from pathlib import Path
 import os
 from dotenv import load_dotenv
@@ -106,6 +107,12 @@ DATABASES = {
     }
 }
 
+EMAIL_BACAKEND =  os.getenv("EMAIL_BACAKEND")
+EMAIL_HOST = os.getenv("EMAIL_HOST")
+EMAIL_PORT = os.getenv("EMAIL_PORT")
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
+EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS")
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
@@ -160,10 +167,12 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
         
     ),
+    "COERCE_DECIMAL_TO_STRING": False,
 }
 
 SIMPLE_JWT = {
    'AUTH_HEADER_TYPES': ('BEARER',),
+   "ACCESS_TOKEN_LIFETIME": timedelta(days=1),
 }
 
 AUTH_USER_MODEL = 'core.User'
@@ -173,5 +182,14 @@ DJOSER = {
         'user_create': 'core.serializers.UserCreateSerializer',
         'current_user': 'core.serializers.UserSerializer'
 
-    }
+    },
+
+    "SEND_CONFIRMATION_EMAIL": True,
+    "ACTIVATION_URL": "activate/{uid}/{token}",
+    "SEND_ACTIVATION_EMAIL": True,
+    "PASSWORD_CHANGED_EMAIL_CONFIRMATION": True,
+    "SET_PASSWORD_RETYPE": True,
+    "PASSWORD_RESET_CONFIRM_URL": "password-reset/{uid}/{token}",
+    "LOGOUT_ON_PASSWORD_CHANGE": True,
+    "PASSWORD_RESET_SHOW_EMAIL_NOT_FOUND": True,
 }
