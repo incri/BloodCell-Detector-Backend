@@ -184,6 +184,10 @@ DJOSER = {
 
     },
 
+    'PERMISSIONS': {
+        'user_create': ['core.permissions.IsAdminOrReadOnly'],
+    },
+
     "SEND_CONFIRMATION_EMAIL": True,
     "ACTIVATION_URL": "activate/{uid}/{token}",
     "SEND_ACTIVATION_EMAIL": True,
