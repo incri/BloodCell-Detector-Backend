@@ -17,30 +17,35 @@ class AddressSerializer(serializers.ModelSerializer):
 
 
 class BloodTestImageDataSerializer(serializers.ModelSerializer):
-    
+
     class Meta:
         model = models.BloodTestImageData
-        fields = ["id", "image",]
+        fields = [
+            "id",
+            "image",
+        ]
 
- 
     def create(self, validated_data):
         blood_test_id = self.context["blood_test_id"]
         return models.BloodTestImageData.objects.create(
             blood_test_id=blood_test_id, **validated_data
         )
 
-class ResultImageDataSerializer(serializers.ModelSerializer):
 
+class ResultImageDataSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         result_id = self.context["result_id"]
         return models.ResultImageData.objects.create(
             result_id=result_id, **validated_data
         )
-    
+
     class Meta:
         model = models.ResultImageData
-        fields = ["id", "image",]
+        fields = [
+            "id",
+            "image",
+        ]
 
 
 class ResultSerializer(serializers.ModelSerializer):
@@ -59,29 +64,24 @@ class ResultSerializer(serializers.ModelSerializer):
         )
 
 
-
-
 class BloodTestSerializer(serializers.ModelSerializer):
 
     id = serializers.UUIDField(read_only=True)
 
-    images = BloodTestImageDataSerializer(many = True, read_only = True)
+    images = BloodTestImageDataSerializer(many=True, read_only=True)
 
     results = ResultSerializer(many=True, read_only=True)
-
 
     class Meta:
         model = models.BloodTest
         fields = ["id", "title", "description", "patient", "images", "results"]
 
 
-
 class PatientSerializer(serializers.ModelSerializer):
 
     id = serializers.UUIDField(read_only=True)
-    blood_tests = BloodTestSerializer(many = True, read_only = True)
-    address = AddressSerializer(read_only = True)
-
+    blood_tests = BloodTestSerializer(many=True, read_only=True)
+    address = AddressSerializer(read_only=True)
 
     class Meta:
         model = models.Patient
@@ -95,5 +95,3 @@ class PatientSerializer(serializers.ModelSerializer):
             "address",
             "blood_tests",
         ]
-
-

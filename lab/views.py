@@ -1,6 +1,5 @@
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.viewsets import ModelViewSet, GenericViewSet
-from rest_framework.mixins import CreateModelMixin, ListModelMixin
+from rest_framework.viewsets import ModelViewSet
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from . import models, serializers
@@ -34,14 +33,13 @@ class BloodTestImageDataViewSet(ModelViewSet):
             return [IsAdminUser()]
         return [IsAuthenticated()]
 
-    
     def get_queryset(self):
-        return models.BloodTestImageData.objects.filter(blood_test_id=self.kwargs["blood_test_pk"])
-    
+        return models.BloodTestImageData.objects.filter(
+            blood_test_id=self.kwargs["blood_test_pk"]
+        )
+
     def get_serializer_context(self):
         return {"blood_test_id": self.kwargs["blood_test_pk"]}
-    
-
 
 
 class ResultImageDataViewSet(ModelViewSet):
@@ -53,29 +51,21 @@ class ResultImageDataViewSet(ModelViewSet):
             return [IsAdminUser()]
         return [IsAuthenticated()]
 
-
-
     def get_permissions(self):
         if self.request.method == "DELETE":
             return [IsAdminUser()]
         return [IsAuthenticated()]
 
-    
     def get_queryset(self):
         return models.ResultImageData.objects.filter(result=self.kwargs["result_pk"])
-    
+
     def get_serializer_context(self):
         return {"result_id": self.kwargs["result_pk"]}
-    
-
-
-
 
 
 class AddressViewSet(ModelViewSet):
     serializer_class = serializers.AddressSerializer
     permission_classes = [IsAuthenticated]
-
 
     def get_queryset(self):
         return models.Address.objects.filter(patient_id=self.kwargs["patient_pk"])
@@ -120,10 +110,3 @@ class ResultViewSet(ModelViewSet):
 
     def get_serializer_context(self):
         return {"blood_test_id": self.kwargs["blood_test_pk"]}
-
-  
-
-    
-
-    
-
