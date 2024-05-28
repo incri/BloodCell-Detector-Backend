@@ -182,7 +182,7 @@ DJOSER = {
         "current_user": "core.serializers.UserSerializer",
     },
     "PERMISSIONS": {
-        "user_create": ["core.permissions.IsAdminOrReadOnly"],
+        "user_create": ["core.permissions.HospitalUserCreationPermission"],
     },
     "SEND_CONFIRMATION_EMAIL": True,
     "ACTIVATION_URL": "activate/{uid}/{token}",

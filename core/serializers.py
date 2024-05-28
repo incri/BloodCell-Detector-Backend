@@ -1,10 +1,8 @@
 from djoser.serializers import UserCreateSerializer as BaseUserCreateSerializer
 from djoser.serializers import UserSerializer as BaseUserSerializer
-from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from . import models
 
-User = get_user_model()
 
 
 class UserCreateSerializer(BaseUserCreateSerializer):
@@ -20,6 +18,12 @@ class UserCreateSerializer(BaseUserCreateSerializer):
             "hospital",
             "is_hospital_admin"
         ]
+
+    def create(self, validated_data):
+        validated_data['is_hospital_admin'] = True
+        if 'hospital' not in validated_data:
+            validated_data['hospital'] = self.context['request'].user.hospital
+        return super().create(validated_data)
 
 
 class UserSerializer(BaseUserSerializer):
