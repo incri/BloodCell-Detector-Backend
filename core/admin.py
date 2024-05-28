@@ -1,7 +1,7 @@
-
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from . import models
+
 
 @admin.register(models.User)
 class UserAdmin(BaseUserAdmin):
@@ -10,8 +10,14 @@ class UserAdmin(BaseUserAdmin):
             None,
             {
                 "classes": ("wide",),
-                "fields": ("username", "password1", "password2", "first_name", "last_name", "email"),
+                "fields": (
+                    "username",
+                    "password1",
+                    "password2",
+                    "first_name",
+                    "last_name",
+                    "email",
+                ),
             },
         ),
     )
-

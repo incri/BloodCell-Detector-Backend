@@ -6,8 +6,8 @@ from . import views
 router = routers.DefaultRouter()
 
 # Register the main endpoints
-router.register("blood-tests", views.BloodTestViewSet)
-router.register("patients", views.PatientViewSet)
+router.register("blood-tests", views.BloodTestViewSet, basename="blood-test")
+router.register("patients", views.PatientViewSet,  basename="patient")
 
 # Create nested routers
 blood_tests_router = routers.NestedDefaultRouter(
@@ -32,9 +32,7 @@ results_router.register(
 )
 
 # Register the patient address endpoint
-patients_router.register(
-    "address", views.AddressViewSet, basename="patient-address"
-)
+patients_router.register("address", views.AddressViewSet, basename="patient-address")
 
 blood_tests_router.register(
     "data-images", views.BloodTestImageDataViewSet, basename="image-data"
@@ -42,7 +40,6 @@ blood_tests_router.register(
 
 
 # Combine all URLs
-urlpatterns = router.urls + patients_router.urls + blood_tests_router.urls + results_router.urls
-
-
-
+urlpatterns = (
+    router.urls + patients_router.urls + blood_tests_router.urls + results_router.urls
+)
