@@ -6,8 +6,8 @@ from . import views
 router = routers.DefaultRouter()
 
 # Register the main endpoints
-router.register("blood-tests", views.BloodTestViewSet)
-router.register("patients", views.PatientViewSet)
+router.register("blood-tests", views.BloodTestViewSet, basename="blood-test")
+router.register("patients", views.PatientViewSet,  basename="patient")
 
 # Create nested routers
 blood_tests_router = routers.NestedDefaultRouter(

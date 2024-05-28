@@ -2,6 +2,8 @@ from rest_framework import serializers
 from . import models
 
 
+
+
 class AddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Address
@@ -95,3 +97,8 @@ class PatientSerializer(serializers.ModelSerializer):
             "address",
             "blood_tests",
         ]
+
+    def create(self, validated_data):
+        if 'hospital' not in validated_data:
+            validated_data['hospital'] = self.context['request'].user.hospital
+        return super().create(validated_data)

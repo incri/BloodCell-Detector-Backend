@@ -38,15 +38,3 @@ class UserSerializer(BaseUserSerializer):
         ]
 
 
-
-class HospitalSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = models.Hospital
-        fields = [
-            "name",
-            "address",
-            "phone",
-            "email",
-            
-        ]
