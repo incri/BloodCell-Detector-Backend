@@ -1,9 +1,7 @@
-from django.contrib.auth.models import User
 from rest_framework import status
 import pytest
 from model_bakery import baker
 from hospital.models import Hospital
-
 
 @pytest.fixture
 def create_hospital(api_client):
@@ -33,7 +31,7 @@ class TestCreateHospital:
 
 
    
-    def test_if_user_is_not_admin_returns_403(self, api_client, create_hospital, authenticate):
+    def test_if_user_is_not_admin_returns_403(self, create_hospital, authenticate):
 
         # Arrange
         authenticate(is_staff=False)
