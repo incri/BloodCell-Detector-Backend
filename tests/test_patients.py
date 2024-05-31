@@ -66,9 +66,6 @@ class TestCreatePatient:
         assert response.status_code == status.HTTP_201_CREATED
 
 
-    
-
-
 
 @pytest.mark.django_db
 class TestRetrievePatient:
