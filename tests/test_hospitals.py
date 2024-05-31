@@ -84,7 +84,7 @@ class TestCreateHospital:
 @pytest.mark.django_db
 class TestRetrieveHospital:
 
-    def test_if_collection_exists_and_user_is_not_admin_returns_403(self, api_client, authenticate):
+    def test_if_hospital_exists_and_user_is_not_admin_returns_403(self, api_client, authenticate):
 
         authenticate(is_staff=False)
 
@@ -94,7 +94,7 @@ class TestRetrieveHospital:
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
-    def test_if_collection_exists_and_user_is_anonymous_returns_401(self, api_client):
+    def test_if_hospital_exists_and_user_is_anonymous_returns_401(self, api_client):
 
         hospital = baker.make(Hospital)
 
@@ -102,7 +102,7 @@ class TestRetrieveHospital:
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    def test_if_collection_exists_returns_200(self, api_client, authenticate):
+    def test_if_hospital_exists_returns_200(self, api_client, authenticate):
 
         authenticate(is_staff=True)
         
@@ -113,7 +113,7 @@ class TestRetrieveHospital:
         assert response.status_code == status.HTTP_200_OK
 
 
-    def test_if_collection_does_not_exists_returns_404(self, api_client, authenticate):
+    def test_if_hospital_does_not_exists_returns_404(self, api_client, authenticate):
 
         authenticate(is_staff=True)
 

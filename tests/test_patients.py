@@ -71,7 +71,7 @@ class TestCreatePatient:
 class TestRetrievePatient:
 
 
-    def test_if_collection_exists_and_user_is_not_authenticated_returns_401(self, api_client, create_patient):
+    def test_if_patients_exists_and_user_is_not_authenticated_returns_401(self, api_client, create_patient):
 
         patient = create_patient({
             'first_name': 'a',
@@ -87,7 +87,7 @@ class TestRetrievePatient:
 
 
 
-    def test_if_collection_exists_returns_200(self, api_client, create_patient, hospital_authenticate):
+    def test_if_patients_exists_returns_200(self, api_client, create_patient, hospital_authenticate):
     # Arrange
         hospital_authenticate(is_hospital_admin=False)
         # Act
@@ -105,7 +105,7 @@ class TestRetrievePatient:
         assert response.status_code == status.HTTP_200_OK
 
 
-    def test_if_collection_does_not_exists_returns_404(self, api_client, hospital_authenticate):
+    def test_if_patients_does_not_exists_returns_404(self, api_client, hospital_authenticate):
 
         hospital_authenticate(is_hospital_admin=True)
 
