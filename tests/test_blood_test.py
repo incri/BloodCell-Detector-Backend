@@ -1,22 +1,9 @@
 from rest_framework import status
+from rest_framework.test import force_authenticate
 import pytest
 from model_bakery import baker
 from lab.models import Patient
 from hospital.models import Hospital
-
-
-@pytest.fixture
-def create_patient(api_client):
-    def do_create_patient(patient):
-        return api_client.post('/lab/patients/', patient)
-    return do_create_patient
-
-@pytest.fixture
-def create_blood_test(api_client):
-    def do_create_blood_test(blood_test):
-        return api_client.post('/lab/blood-tests/', blood_test)
-    return do_create_blood_test
-
 
 
 @pytest.mark.django_db
@@ -92,8 +79,9 @@ class TestCreateBloodTest:
 class TestRetrieveBloodTest:
 
 
-    def test_if_blood_test_exists_and_user_is_not_authenticated_returns_401(self, api_client, create_blood_test):
+    def test_if_blood_test_exists_and_user_is_not_authenticated_returns_401(self, api_client, create_blood_test, hospital_authenticate):
 
+        hospital_authenticate(is_hospital_admin=True)
 
         
 
@@ -103,6 +91,8 @@ class TestRetrieveBloodTest:
             'description': 'Detailed description of the blood test',
             'detection_status': 'P',
         })
+
+        api_client.force_authenticate(user=None)
 
         response = api_client.get(f'/lab/blood-tests/{blood_test.json().get('id')}/')
 
@@ -132,6 +122,7 @@ class TestRetrieveBloodTest:
             'detection_status': 'P',
             'patient':patient_id
         })
+
 
         response = api_client.get(f'/lab/blood-tests/{blood_test.json().get('id')}/')
 

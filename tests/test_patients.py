@@ -1,15 +1,10 @@
 from rest_framework import status
+from rest_framework.test import force_authenticate
+
 import pytest
 from model_bakery import baker
 from lab.models import Patient
 from hospital.models import Hospital
-
-@pytest.fixture
-def create_patient(api_client):
-    def do_create_patient(patient):
-        return api_client.post('/lab/patients/', patient)
-    return do_create_patient
-
 
 
 @pytest.mark.django_db
@@ -71,7 +66,9 @@ class TestCreatePatient:
 class TestRetrievePatient:
 
 
-    def test_if_patients_exists_and_user_is_not_authenticated_returns_401(self, api_client, create_patient):
+    def test_if_patients_exists_and_user_is_not_authenticated_returns_401(self, api_client, create_patient, hospital_authenticate):
+
+        hospital_authenticate(is_hospital_admin=False)
 
         patient = create_patient({
             'first_name': 'a',
@@ -80,6 +77,8 @@ class TestRetrievePatient:
             'phone': 'a',
             'birth_date': '2002-04-02',
         })
+
+        api_client.force_authenticate(user=None)
 
         response = api_client.get(f'/lab/patients/{patient.json().get('id')}/')
 
