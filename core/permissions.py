@@ -1,9 +1,19 @@
 from rest_framework import permissions
 
 
-class IsAdminOrReadOnly(permissions.BasePermission):
+from rest_framework import permissions
 
+class IsAdminOrReadOnly(permissions.BasePermission):
+    """
+    Custom permission to allow admin users full access,
+    allow read-only access for non-admin users.
+    """
     def has_permission(self, request, view):
+        # Allow GET, HEAD, or OPTIONS requests (read-only) for all users
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        
+        # Allow write permissions only for admin users
         return request.user and request.user.is_staff
 
 

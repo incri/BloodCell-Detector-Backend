@@ -1,12 +1,12 @@
 from rest_framework import status
 import pytest
 from model_bakery import baker
-from hospital.models import Hospital
+from lab.models import Hospital
 
 @pytest.fixture
 def create_hospital(api_client):
     def do_create_hospital(hospital):
-        return api_client.post('/hospital/create/', hospital)
+        return api_client.post('/hospital/', hospital)
     return do_create_hospital
 
 

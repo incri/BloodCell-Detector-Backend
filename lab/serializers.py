@@ -1,7 +1,18 @@
 from rest_framework import serializers
 from . import models
 
+class HospitalSerializer(serializers.ModelSerializer):
 
+    class Meta:
+        model = models.Hospital
+        fields = [
+            "id",
+            "name",
+            "address",
+            "phone",
+            "email",
+            
+        ]
 
 
 class AddressSerializer(serializers.ModelSerializer):
@@ -76,7 +87,7 @@ class BloodTestSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.BloodTest
-        fields = ["id", "title", "description", "patient", "images", "results"]
+        fields = ["id", "title", "description", "patient", "images", "results",]
 
 
 class PatientSerializer(serializers.ModelSerializer):
@@ -84,6 +95,7 @@ class PatientSerializer(serializers.ModelSerializer):
     id = serializers.UUIDField(read_only=True)
     blood_tests = BloodTestSerializer(many=True, read_only=True)
     address = AddressSerializer(read_only=True)
+    hospital = HospitalSerializer(read_only = True)
 
     class Meta:
         model = models.Patient
@@ -96,9 +108,18 @@ class PatientSerializer(serializers.ModelSerializer):
             "birth_date",
             "address",
             "blood_tests",
+            "hospital"
         ]
 
     def create(self, validated_data):
-        if 'hospital' not in validated_data:
-            validated_data['hospital'] = self.context['request'].user.hospital
+        request = self.context.get('request')
+        user_hospital_id = request.user.hospital.id if request and hasattr(request, 'user') and hasattr(request.user, 'hospital') else None
+        patient_hospital_id = validated_data.get('hospital', None)
+        validated_data['hospital'] = self.context['request'].user.hospital
+        
+        if user_hospital_id and patient_hospital_id and user_hospital_id != patient_hospital_id:
+            raise serializers.ValidationError("You cannot create data for other hospitals.")
+        
         return super().create(validated_data)
+
+ 

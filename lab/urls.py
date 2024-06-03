@@ -6,40 +6,46 @@ from . import views
 router = routers.DefaultRouter()
 
 # Register the main endpoints
-router.register("blood-tests", views.BloodTestViewSet, basename="blood-test")
-router.register("patients", views.PatientViewSet,  basename="patient")
+router.register("hospitals", views.HospitalViewSet,  basename="hospital")
+
 
 # Create nested routers
-blood_tests_router = routers.NestedDefaultRouter(
-    router, "blood-tests", lookup="blood_test"
+
+
+hospital_router = routers.NestedDefaultRouter(router, "hospitals", lookup="hospital")
+
+hospital_router.register('patients', views.PatientViewSet, basename="patients")
+
+patients_router = routers.NestedDefaultRouter(
+    hospital_router, "patients", lookup="patient"
 )
 
-patients_router = routers.NestedDefaultRouter(router, "patients", lookup="patient")
+patients_router.register(
+    "address", views.AddressViewSet, basename="addresss"
+)
 
-# Register nested resources
-blood_tests_router.register(
+patients_router.register("blood-tests", views.BloodTestViewSet, basename="blood-tests")
+
+blood_test_router = routers.NestedDefaultRouter(
+    patients_router, "blood-tests", lookup="blood_tests"
+)
+
+blood_test_router.register(
+    "data-images", views.BloodTestImageDataViewSet, basename="image-data"
+)
+
+blood_test_router.register(
     "results", views.ResultViewSet, basename="blood-test-results"
 )
 
-# Create a nested router for blood test results
 results_router = routers.NestedDefaultRouter(
-    blood_tests_router, "results", lookup="result"
+    blood_test_router, "results", lookup="result"
 )
 
-# Register the results images endpoint
 results_router.register(
     "result-images", views.ResultImageDataViewSet, basename="result-results-images"
 )
 
-# Register the patient address endpoint
-patients_router.register("address", views.AddressViewSet, basename="patient-address")
-
-blood_tests_router.register(
-    "data-images", views.BloodTestImageDataViewSet, basename="image-data"
-)
-
-
-# Combine all URLs
 urlpatterns = (
-    router.urls + patients_router.urls + blood_tests_router.urls + results_router.urls
+    router.urls + hospital_router.urls + patients_router.urls + blood_test_router.urls + results_router.urls
 )

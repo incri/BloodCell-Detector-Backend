@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 import pytest
 from model_bakery import baker
-from hospital.models import Hospital
+from lab.models import Hospital
 
 
 User = get_user_model()
