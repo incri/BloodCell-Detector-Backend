@@ -1,9 +1,17 @@
 from django.db import models
 from uuid import uuid4
 
-from hospital.models import Hospital
-
 # Create your models here.
+
+class Hospital(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    name = models.CharField(max_length=255)
+    address = models.TextField()
+    phone = models.CharField(max_length=15)
+    email = models.EmailField()
+
+    def __str__(self):
+        return self.name
 
 class Patient(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)

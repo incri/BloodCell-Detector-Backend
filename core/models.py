@@ -3,7 +3,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
-from hospital.models import Hospital
+from lab.models import Hospital
 
 
 class User(AbstractUser):

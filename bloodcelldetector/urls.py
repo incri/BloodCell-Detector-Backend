@@ -24,8 +24,7 @@ admin.site.index_title = "Admin"
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("__debug__/", include("debug_toolbar.urls")),
-    path("lab/", include("lab.urls")),
-    path("hospital/", include("hospital.urls")),
+    path("", include("lab.urls")),
     path("auth/", include("djoser.urls")),
     path("auth/", include("djoser.urls.jwt")),
 ]

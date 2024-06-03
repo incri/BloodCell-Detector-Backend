@@ -1,7 +1,6 @@
 from djoser.serializers import UserCreateSerializer as BaseUserCreateSerializer
 from djoser.serializers import UserSerializer as BaseUserSerializer
-from rest_framework import serializers
-from . import models
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
 

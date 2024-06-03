@@ -4,7 +4,7 @@ from rest_framework.test import force_authenticate
 import pytest
 from model_bakery import baker
 from lab.models import Patient
-from hospital.models import Hospital
+from lab.models import Hospital
 
 
 @pytest.mark.django_db

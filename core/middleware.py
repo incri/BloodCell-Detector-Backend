@@ -1,25 +1,40 @@
-
-
-from django.utils.deprecation import MiddlewareMixin
 from django.core.exceptions import PermissionDenied
+from django.urls import resolve
 
-class HospitalAccessMiddleware(MiddlewareMixin):
-    def process_view(self, request, view_func, view_args, view_kwargs):
-        user = request.user
+
+
+from rest_framework.request import Request as RestFrameworkRequest
+from rest_framework.views import APIView
+
+class MyMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        drf_request: RestFrameworkRequest = APIView().initialize_request(request)
+        user = drf_request.user
+        resolver_match = resolve(request.path_info)
+        hospital_id = resolver_match.kwargs.get('hospital_pk')
+
+
+        # Allow access if user is not authenticated
         if not user.is_authenticated:
-            return None
+            return self.get_response(request)
 
+        # Allow access for superusers
         if user.is_superuser:
-            return None
+            return self.get_response(request)
 
-        # Get the hospital id from the user's profile
-        hospital_id = getattr(user, 'hospital_id', None)
-        if hospital_id is None:
+        # Retrieve hospital ID from user profile
+        if user.hospital_id is None:
             raise PermissionDenied("User does not belong to any hospital")
-
-        # Restrict access to the hospital data
-        if 'hospital_id' in request.resolver_match.kwargs:
-            if request.resolver_match.kwargs['hospital_id'] != str(hospital_id):
+        
+        # Check if the requested hospital ID matches the user's hospital ID
+        if hospital_id:
+            if str(hospital_id) != str(user.hospital_id):
                 raise PermissionDenied("User cannot access data from this hospital")
 
-        return None
+
+        # this will work while sending reponse
+        return self.get_response(request)
+        
