@@ -16,13 +16,6 @@ class HospitalViewSet(ModelViewSet):
     permission_classes = [IsAdminUser]
     queryset = models.Hospital.objects.all()
 
-    # def get_queryset(self):
-    #     user = self.request.user
-
-    #     if user.is_superuser:
-    #         return models.Hospital.objects.all()
-    #     return models.Hospital.objects.filter(id=user.hospital_id)
-
 
 class BloodTestViewSet(ModelViewSet):
     serializer_class = serializers.BloodTestSerializer
@@ -35,14 +28,17 @@ class BloodTestViewSet(ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        hospital_id = self.kwargs.get("hospital_pk")
-
         if user.is_superuser:
             return models.BloodTest.objects.prefetch_related("images").all()
-
         return models.BloodTest.objects.prefetch_related("images").filter(
-            hospital_id=user.hospital_id
+            patient__hospital=user.hospital_id
         )
+
+    def get_serializer_context(self):
+        return {
+            "patient_id": self.kwargs["patient_pk"],
+            "request": self.request,
+        }
 
 
 class BloodTestImageDataViewSet(ModelViewSet):
@@ -55,10 +51,15 @@ class BloodTestImageDataViewSet(ModelViewSet):
 
         if user.is_superuser:
             return models.BloodTestImageData.objects.all()
-        return models.BloodTestImageData.objects.filter(hospital_id=user.hospital_id)
+        return models.BloodTestImageData.objects.filter(
+            blood_test__patient__hospital=user.hospital_id
+        )
 
     def get_serializer_context(self):
-        return {"blood_test_id": self.kwargs["blood_tests_pk"]}
+        return {
+            "blood_test_id": self.kwargs["blood_tests_pk"],
+            "request": self.request,
+        }
 
 
 class ResultImageDataViewSet(ModelViewSet):
@@ -67,13 +68,17 @@ class ResultImageDataViewSet(ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        hospital_id = self.kwargs.get("hospital_pk")
         if user.is_superuser:
             return models.ResultImageData.objects.all()
-        return models.ResultImageData.objects.filter(hospital_id=user.hospital_id)
+        return models.ResultImageData.objects.filter(
+            result__bloodtest__patient__hospital=user.hospital_id
+        )
 
     def get_serializer_context(self):
-        return {"result_id": self.kwargs["result_pk"]}
+        return {
+            "result_id": self.kwargs["result_pk"],
+            "request": self.request,
+        }
 
 
 class AddressViewSet(ModelViewSet):
@@ -82,13 +87,15 @@ class AddressViewSet(ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        hospital_id = self.kwargs.get("hospital_pk")
         if user.is_superuser:
             return models.Address.objects.all()
-        return models.Address.objects.filter(hospital_id=user.hospital_id)
+        return models.Address.objects.filter(patient__hospital=user.hospital_id)
 
     def get_serializer_context(self):
-        return {"patient_id": self.kwargs["patient_pk"]}
+        return {
+            "patient_id": self.kwargs["patient_pk"],
+            "request": self.request,
+        }
 
 
 class PatientViewSet(ModelViewSet):
@@ -102,10 +109,15 @@ class PatientViewSet(ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        hospital_id = self.kwargs.get("hospital_pk")
         if user.is_superuser:
             return models.Patient.objects.all()
         return models.Patient.objects.filter(hospital_id=user.hospital_id)
+
+    def get_serializer_context(self):
+        return {
+            "hospital_id": self.kwargs["hospital_pk"],
+            "request": self.request,
+        }
 
 
 class ResultViewSet(ModelViewSet):
@@ -119,10 +131,14 @@ class ResultViewSet(ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        hospital_id = self.kwargs.get("hospital_pk")
         if user.is_superuser:
             return models.Result.objects.all()
-        return models.Result.objects.filter(hospital_id=user.hospital_id)
+        return models.Result.objects.filter(
+            bloodtest__patient__hospital=user.hospital_id
+        )
 
     def get_serializer_context(self):
-        return {"blood_test_id": self.kwargs["blood_tests_pk"]}
+        return {
+            "blood_test_id": self.kwargs["blood_tests_pk"],
+            "request": self.request,
+        }
