@@ -78,51 +78,53 @@ class TestCreatePatient:
         assert response.status_code == status.HTTP_201_CREATED
 
 
-# @pytest.mark.django_db
-# class TestRetrievePatient:
+@pytest.mark.django_db
+class TestRetrievePatient:
 
+    def test_if_patients_exists_and_user_is_not_authenticated_returns_401(
+        self, api_client, authenticate
+    ):
 
-#     def test_if_patients_exists_and_user_is_not_authenticated_returns_401(self, api_client, create_patient, hospital_authenticate):
+        # Arrange
+        hospital = baker.make("Hospital", id=1)  # Create a hospital with a specific ID
+        authenticate(hospital_id=hospital.id)
 
-#         hospital_authenticate(is_hospital_admin=False)
+        # Act
+        patient = baker.make(
+            "Patient", hospital=hospital
+        )  # Create a patient associated with the hospital
 
-#         patient = create_patient({
-#             'first_name': 'a',
-#             'last_name': 'a',
-#             'email': 'a@gmail.com',
-#             'phone': 'a',
-#             'birth_date': '2002-04-02',
-#         })
+        api_client.force_authenticate(user=None)
 
-#         api_client.force_authenticate(user=None)
+        response = api_client.get(f"/hospitals/{hospital.id}/patients/{patient.id}/")
 
-#         response = api_client.get(f'/lab/patients/{patient.json().get('id')}/')
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-#         assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    def test_if_patients_exists_returns_200(self, api_client, authenticate):
+        # Arrange
+        hospital = baker.make("Hospital", id=1)  # Create a hospital with a specific ID
+        authenticate(hospital_id=hospital.id)
 
+        # Act
+        patient = baker.make(
+            "Patient", hospital=hospital
+        )  # Create a patient associated with the hospital
 
-#     def test_if_patients_exists_returns_200(self, api_client, create_patient, hospital_authenticate):
-#     # Arrange
-#         hospital_authenticate(is_hospital_admin=False)
-#         # Act
-#         patient = create_patient({
-#             'first_name': 'a',
-#             'last_name': 'a',
-#             'email': 'a@gmail.com',
-#             'phone': 'a',
-#             'birth_date': '2002-04-02',
-#         })
+        response = api_client.get(f"/hospitals/{hospital.id}/patients/{patient.id}/")
 
-#         response = api_client.get(f'/lab/patients/{patient.json().get('id')}/')
+        # Assert
+        assert response.status_code == status.HTTP_200_OK
 
-#         # Assert
-#         assert response.status_code == status.HTTP_200_OK
+    def test_if_patients_does_not_exists_returns_404(self, api_client, authenticate):
 
+        hospital = baker.make("Hospital", id=1)  # Create a hospital with a specific ID
+        authenticate(hospital_id=hospital.id)
 
-#     def test_if_patients_does_not_exists_returns_404(self, api_client, hospital_authenticate):
+        # Act
+        patient = baker.make(
+            "Patient", hospital=hospital
+        )  # Create a patient associated with the hospital
 
-#         hospital_authenticate(is_hospital_admin=True)
+        response = api_client.get(f"/hospitals/{hospital.id}/patients/10/")
 
-#         response = api_client.get(f'/lab/patients/1/')
-
-#         assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.status_code == status.HTTP_404_NOT_FOUND
