@@ -1,176 +1,205 @@
-# from rest_framework import status
+from rest_framework import status
+
 # from rest_framework.test import force_authenticate
 
-# import pytest
-# from model_bakery import baker
+import pytest
+
+from model_bakery import baker
+
 # from lab.models import Patient
 # from lab.models import Hospital
 
 
-# @pytest.mark.django_db
-# class TestCreateResults:
+@pytest.fixture
+def create_result(api_client):
+    def do_create_result(result_data, hospital_id, patient_id, blood_test_id):
+        url = f"/hospitals/{hospital_id}/patients/{patient_id}/blood-tests/{blood_test_id}/results/"
+        return api_client.post(url, result_data)
 
-#     def test_if_user_is_anonymous_returns_401(self, create_blood_test_result):
-
-#         # Arrange
-
-#         # Act
-#         blood_test = baker.make('lab.BloodTest')
-#         blood_test_id = blood_test.id
-
-#         # Act
-#         response = create_blood_test_result(blood_test_id, {
-#             'descriptions': 'Some result data',
-#         })
-
-#         # Assert
-#         assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    return do_create_result
 
 
-#     def test_if_data_is_valid_returns_201(self, create_blood_test_result, hospital_authenticate):
-#         # Arrange
-#         hospital_authenticate(is_hospital_admin=True)
-#         blood_test = baker.make('lab.BloodTest')
-#         blood_test_id = blood_test.id
+@pytest.mark.django_db
+class TestCreateResults:
+
+    def test_if_user_is_anonymous_returns_401(
+        self, create_result, authenticate, api_client
+    ):
+
+        hospital = baker.make("Hospital", id=1)  # Create a hospital with a specific ID
+        authenticate(hospital_id=hospital.id)
+
+        # Act
+        patient = baker.make(
+            "Patient", hospital=hospital
+        )  # Create a patient associated w
+
+        blood_test = baker.make("BloodTest", patient=patient)
+
+        result_data = {
+            "description": "Detailed description of the blood test",
+            "bloodtest": blood_test.id,
+        }
+
+        api_client.force_authenticate(user=None)
+
+        # Act
+        response = create_result(
+            result_data,
+            hospital.id,
+            patient.id,
+            blood_test.id,
+        )
+
+        # Assert
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_if_data_is_valid_returns_201(self, create_result, authenticate):
+        hospital = baker.make("Hospital", id=1)  # Create a hospital with a specific ID
+        authenticate(hospital_id=hospital.id)
+
+        # Act
+        patient = baker.make(
+            "Patient", hospital=hospital
+        )  # Create a patient associated w
+
+        blood_test = baker.make("BloodTest", patient=patient)
+
+        result_data = {
+            "description": "Detailed description of the blood test",
+            "bloodtest": blood_test.id,
+        }
+
+        # Act
+        response = create_result(
+            result_data,
+            hospital.id,
+            patient.id,
+            blood_test.id,
+        )
+
+        # Assert
+        assert response.status_code == status.HTTP_201_CREATED
+
+    def test_if_data_is_invalid_returns_400(self, create_result, authenticate):
+
+        hospital = baker.make("Hospital", id=1)  # Create a hospital with a specific ID
+        authenticate(hospital_id=hospital.id)
+
+        # Act
+        patient = baker.make(
+            "Patient", hospital=hospital
+        )  # Create a patient associated w
+
+        blood_test = baker.make("BloodTest", patient=patient)
+
+        result_data = {
+            "description": "",
+            "bloodtest": blood_test.id,
+        }
+
+        # Act
+        response = create_result(
+            result_data,
+            hospital.id,
+            patient.id,
+            blood_test.id,
+        )
+
+        # Assert
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
 
 
-#         # Act
-#         response = create_blood_test_result(blood_test_id, {
-#             'description': 'Some result data',
-#         })
+@pytest.mark.django_db
+class TestRetrieveResults:
 
-#         # Assert
-#         assert response.status_code == status.HTTP_201_CREATED
+    def test_if_results_exists_and_user_is_not_authenticated_returns_401(
+        self,
+        api_client,
+        authenticate,
+    ):
 
+        # Arrange
+        hospital = baker.make("Hospital", id=1)  # Create a hospital with a specific ID
+        authenticate(hospital_id=hospital.id)
 
-#     def test_if_data_is_invalid_returns_400(self, create_blood_test_result, hospital_authenticate):
-#         # Arrange
-#         hospital_authenticate(is_hospital_admin=True)
-#         blood_test = baker.make('lab.BloodTest')
-#         blood_test_id = blood_test.id
+        # Act
+        patient = baker.make(
+            "Patient", hospital=hospital
+        )  # Create a patient associated with the hospital
 
-#         #Act
+        blood_test = baker.make(
+            "BloodTest", patient=patient
+        )  # Create a patient associated with the hospital
 
-#         response = create_blood_test_result(blood_test_id, {
-#             'description': '',
-#         })
+        result = baker.make("Result", bloodtest=blood_test)
 
-#         # Assert
-#         assert response.status_code == status.HTTP_400_BAD_REQUEST
+        # Act
 
+        api_client.force_authenticate(user=None)
 
-# @pytest.mark.django_db
-# class TestRetrieveResults:
+        response = api_client.get(
+            f"/hospitals/{hospital.id}/patients/{patient.id}/blood-tests/{blood_test.id}/results/{result.id}/"
+        )
 
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-#     def test_if_results_exists_and_user_is_not_authenticated_returns_402(self, api_client, create_blood_test_result, create_patient, create_blood_test, hospital_authenticate):
+    def test_if_results_exists_and_user_is_authenticated_returns_200(
+        self,
+        api_client,
+        authenticate,
+    ):
 
-#         hospital_authenticate(is_hospital_admin=True)
+        # Arrange
+        hospital = baker.make("Hospital", id=1)  # Create a hospital with a specific ID
+        authenticate(hospital_id=hospital.id)
 
+        # Act
+        patient = baker.make(
+            "Patient", hospital=hospital
+        )  # Create a patient associated with the hospital
 
-#         # Arrange
+        blood_test = baker.make(
+            "BloodTest", patient=patient
+        )  # Create a patient associated with the hospital
 
-#         patient_response = create_patient({
-#             'first_name': 'a',
-#             'last_name': 'a',
-#             'email': 'a@gmail.com',
-#             'phone': 'a',
-#             'birth_date': '2002-04-02',
-#         })
-#         patient_id = patient_response.json().get('id')
+        result = baker.make("Result", bloodtest=blood_test)
 
-#         # Act
-#         blood_test = create_blood_test({
-#             'title': 'Blood Test Title',
-#             'description': 'Detailed description of the blood test',
-#             'detection_status': 'P',
-#             'patient':patient_id
-#         })
+        # Act
 
-#         blood_test_id = blood_test.json().get('id')
+        response = api_client.get(
+            f"/hospitals/{hospital.id}/patients/{patient.id}/blood-tests/{blood_test.id}/results/{result.id}/"
+        )
 
+        # Assert
+        assert response.status_code == status.HTTP_200_OK
 
-#         results = create_blood_test_result(blood_test_id, {
-#             'description': 'Some result data',
-#         })
+    def test_if_results_does_not_exists_returns_404(
+        self,
+        api_client,
+        authenticate,
+    ):
 
-#         api_client.force_authenticate(user=None)
+        # Arrange
+        hospital = baker.make("Hospital", id=1)  # Create a hospital with a specific ID
+        authenticate(hospital_id=hospital.id)
 
+        # Act
+        patient = baker.make(
+            "Patient", hospital=hospital
+        )  # Create a patient associated with the hospital
 
-#         # Act
+        blood_test = baker.make(
+            "BloodTest", patient=patient
+        )  # Create a patient associated with the hospital
 
-#         response = api_client.get(f'/lab/blood-tests/{blood_test_id}/results/{results.json().get('id')}/')
+        result = baker.make("Result", bloodtest=blood_test)
 
-#         assert response.status_code == status.HTTP_401_UNAUTHORIZED
+        # Act
 
+        response = api_client.get(
+            f"/hospitals/{hospital.id}/patients/{patient.id}/blood-tests/{blood_test.id}/results/1/"
+        )
 
-#     def test_if_results_exists_and_user_is_authenticated_returns_200(self, api_client, hospital_authenticate, create_blood_test_result, create_patient, create_blood_test):
-
-
-#         # Arrange
-#         hospital_authenticate(is_hospital_admin=True)
-
-#         patient_response = create_patient({
-#             'first_name': 'a',
-#             'last_name': 'a',
-#             'email': 'a@gmail.com',
-#             'phone': 'a',
-#             'birth_date': '2002-04-02',
-#         })
-#         patient_id = patient_response.json().get('id')
-
-#         # Act
-#         blood_test = create_blood_test({
-#             'title': 'Blood Test Title',
-#             'description': 'Detailed description of the blood test',
-#             'detection_status': 'P',
-#             'patient':patient_id
-#         })
-
-#         blood_test_id = blood_test.json().get('id')
-
-
-#         results = create_blood_test_result(blood_test_id, {
-#             'description': 'Some result data',
-#         })
-
-
-#         # Act
-
-#         response = api_client.get(f'/lab/blood-tests/{blood_test_id}/results/{results.json().get('id')}/')
-
-#         assert response.status_code == status.HTTP_200_OK
-
-
-#     def test_if_results_does_not_exists_returns_404(self, api_client, create_patient, hospital_authenticate, create_blood_test, create_blood_test_result):
-
-#         hospital_authenticate(is_hospital_admin=True)
-
-#         patient_response = create_patient({
-#             'first_name': 'a',
-#             'last_name': 'a',
-#             'email': 'a@gmail.com',
-#             'phone': 'a',
-#             'birth_date': '2002-04-02',
-#         })
-#         patient_id = patient_response.json().get('id')
-
-#         # Act
-#         blood_test = create_blood_test({
-#             'title': 'Blood Test Title',
-#             'description': 'Detailed description of the blood test',
-#             'detection_status': 'P',
-#             'patient':patient_id
-#         })
-
-#         blood_test_id = blood_test.json().get('id')
-
-
-#         results = create_blood_test_result(blood_test_id, {
-#             'description': 'Some result data',
-#         })
-
-
-#         response = api_client.get(f'/lab/blood-tests/{blood_test_id}/results/1/')
-
-#         assert response.status_code == status.HTTP_404_NOT_FOUND
+        # Assert
+        assert response.status_code == status.HTTP_404_NOT_FOUND

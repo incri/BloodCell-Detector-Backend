@@ -94,36 +94,38 @@ class TestCreateBloodTest:
 @pytest.mark.django_db
 class TestRetrieveBloodTest:
 
-    # def test_if_blood_test_exists_and_user_is_not_authenticated_returns_401(
-    #     self, api_client, authenticate
-    # ):
+    def test_if_blood_test_exists_and_user_is_not_authenticated_returns_401(
+        self, api_client, authenticate
+    ):
 
-    #     # Arrange
-    #     hospital = baker.make("Hospital", id=1)  # Create a hospital with a specific ID
-    #     authenticate(hospital_id=hospital.id)
+        # Arrange
+        hospital = baker.make("Hospital", id=1)  # Create a hospital with a specific ID
+        authenticate(hospital_id=hospital.id)
 
-    #     # Act
-    #     patient = baker.make(
-    #         "Patient", hospital=hospital
-    #     )  # Create a patient associated w
+        # Act
+        patient = baker.make(
+            "Patient", hospital=hospital
+        )  # Create a patient associated with the hospital
 
-    #     blood_test = baker.make(
-    #         "BloodTest", patient=patient
-    #     )  # Create a patient associated w
+        blood_test = baker.make(
+            "BloodTest", patient=patient
+        )  # Create a patient associated with the hospital
 
-    #     api_client.force_authenticate(user=None)
+        # Act
 
-    #     response = api_client.get(
-    #         f"/hospitals/{hospital.id}/patients/{patient.id}/blood-tests/{blood_test.id}/"
-    #     )
+        api_client.force_authenticate(user=None)
 
-    #     assert response.status_code == status.HTTP_401_UNAUTHORIZED
+        response = api_client.get(
+            f"/hospitals/{hospital.id}/patients/{patient.id}/blood-tests/{blood_test.id}/"
+        )
+
+        # Assert
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     def test_if_patients_exists_returns_200(
         self,
         api_client,
         authenticate,
-        create_blood_test,
     ):
         # Arrange
         hospital = baker.make("Hospital", id=1)  # Create a hospital with a specific ID
