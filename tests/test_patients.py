@@ -1,3 +1,4 @@
+from uuid import uuid4
 from rest_framework import status
 from rest_framework.test import force_authenticate
 
@@ -62,7 +63,11 @@ class TestCreatePatient:
 
     def test_if_data_is_valid_returns_201(self, create_patient, hospital_authenticate):
         # Arrange
-        hospital_authenticate(hospital_id=1)
+
+        hospital_id = uuid4()
+        
+        hospital_authenticate(hospital_id=hospital_id)
+
         patient_data = {
             "first_name": "a",
             "last_name": "a",
@@ -72,7 +77,7 @@ class TestCreatePatient:
         }
 
         # Act
-        response = create_patient(patient_data, 1)
+        response = create_patient(patient_data, hospital_id)
 
         # Assert
         assert response.status_code == status.HTTP_201_CREATED
