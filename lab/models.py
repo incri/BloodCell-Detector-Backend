@@ -3,6 +3,7 @@ from uuid import uuid4
 
 # Create your models here.
 
+
 class Hospital(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     name = models.CharField(max_length=255)
@@ -13,6 +14,10 @@ class Hospital(models.Model):
     def __str__(self):
         return self.name
 
+    class Meta:
+        ordering = ["name"]
+
+
 class Patient(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     first_name = models.CharField(max_length=255)
@@ -20,8 +25,9 @@ class Patient(models.Model):
     email = models.EmailField(unique=True)
     phone = models.CharField(max_length=255)
     birth_date = models.DateField()
-    hospital = models.ForeignKey(Hospital, on_delete=models.CASCADE, related_name='patients')
-
+    hospital = models.ForeignKey(
+        Hospital, on_delete=models.CASCADE, related_name="patients"
+    )
 
     def __str__(self) -> str:
         return f"{self.first_name} {self.last_name}"

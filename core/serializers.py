@@ -3,7 +3,6 @@ from djoser.serializers import UserSerializer as BaseUserSerializer
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
-
 class UserCreateSerializer(BaseUserCreateSerializer):
 
     class Meta(BaseUserCreateSerializer.Meta):
@@ -15,13 +14,12 @@ class UserCreateSerializer(BaseUserCreateSerializer):
             "first_name",
             "last_name",
             "hospital",
-            "is_hospital_admin"
+            "is_hospital_admin",
         ]
 
     def create(self, validated_data):
-        validated_data['is_hospital_admin'] = True
-        if 'hospital' not in validated_data:
-            validated_data['hospital'] = self.context['request'].user.hospital
+        if "hospital" not in validated_data:
+            validated_data["hospital"] = self.context["request"].user.hospital
         return super().create(validated_data)
 
 
@@ -35,5 +33,3 @@ class UserSerializer(BaseUserSerializer):
             "first_name",
             "last_name",
         ]
-
-

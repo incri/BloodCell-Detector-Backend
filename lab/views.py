@@ -13,7 +13,10 @@ from .pagination import DefaultPagination
 
 class HospitalViewSet(ModelViewSet):
     serializer_class = serializers.HospitalSerializer
+    pagination_class = DefaultPagination
     permission_classes = [IsAdminUser]
+    filter_backends = [SearchFilter]
+    search_fields = ["name", "email"]
     queryset = models.Hospital.objects.all()
 
 
