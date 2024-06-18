@@ -183,10 +183,14 @@ SIMPLE_JWT = {
 
 AUTH_USER_MODEL = "core.User"
 
+DOMAIN = "localhost:5173"
+SITE_NAME = "NepaliLitHub"
+
 DJOSER = {
     "SERIALIZERS": {
         "user_create": "core.serializers.UserCreateSerializer",
         "current_user": "core.serializers.UserSerializer",
+        "token_create": "core.serializers.CustomTokenCreateSerializer",
     },
     "PERMISSIONS": {
         "user_create": ["core.permissions.HospitalUserCreationPermission"],
