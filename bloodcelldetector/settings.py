@@ -190,6 +190,7 @@ DJOSER = {
     "SERIALIZERS": {
         "user_create": "core.serializers.UserCreateSerializer",
         "current_user": "core.serializers.UserSerializer",
+        "token_create": "core.serializers.CustomTokenCreateSerializer",
     },
     "PERMISSIONS": {
         "user_create": ["core.permissions.HospitalUserCreationPermission"],
