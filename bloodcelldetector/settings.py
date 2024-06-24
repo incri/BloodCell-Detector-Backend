@@ -167,7 +167,7 @@ INTERNAL_IPS = [
 
 ALLOWED_HOSTS = ["*"]
 
-CORS_ALLOWED_ORIGINS = ["http://localhost:5173"]
+CORS_ALLOWED_ORIGINS = ["http://localhost:5173", "http://localhost:5174"]
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
@@ -191,6 +191,7 @@ DJOSER = {
         "user_create": "core.serializers.UserCreateSerializer",
         "current_user": "core.serializers.UserSerializer",
         "token_create": "core.serializers.CustomTokenCreateSerializer",
+        "user": "core.serializers.UserSerializer",
     },
     "PERMISSIONS": {
         "user_create": ["core.permissions.HospitalUserCreationPermission"],
