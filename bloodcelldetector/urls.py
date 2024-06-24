@@ -17,7 +17,10 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path, include
-from core.views import CustomTokenCreateView  # Import your custom registration view
+from core.views import (
+    CustomTokenCreateView,
+    CustomUserViewSet,
+)
 
 
 admin.site.site_header = "BCD Admin Dashboard"
@@ -28,6 +31,7 @@ urlpatterns = [
     path("__debug__/", include("debug_toolbar.urls")),
     path("", include("lab.urls")),
     path("auth/jwt/create/", CustomTokenCreateView.as_view(), name="custom_register"),
+    path("auth/users/", CustomUserViewSet.as_view({"get": "list"}), name="user-list"),
     path("auth/", include("djoser.urls")),
     path("auth/", include("djoser.urls.jwt")),
 ]
