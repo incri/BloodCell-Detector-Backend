@@ -4,6 +4,8 @@ from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import serializers
 
+from lab.serializers import HospitalSerializer
+
 
 class UserCreateSerializer(BaseUserCreateSerializer):
 
@@ -27,13 +29,18 @@ class UserCreateSerializer(BaseUserCreateSerializer):
 
 class UserSerializer(BaseUserSerializer):
 
+    hospital = HospitalSerializer(read_only=True)
+
     class Meta(BaseUserSerializer.Meta):
+
         fields = [
             "id",
             "username",
             "email",
             "first_name",
             "last_name",
+            "hospital",
+            "is_hospital_admin",
         ]
 
 
@@ -72,6 +79,7 @@ class CustomTokenCreateSerializer(serializers.Serializer):
                 "username": user.username,
                 "is_hospital_admin": user.is_hospital_admin,
                 "is_superuser": user.is_superuser,
+                "full_name": user.first_name + " " + user.last_name,
             },
         }
 

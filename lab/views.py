@@ -15,8 +15,14 @@ class HospitalViewSet(ModelViewSet):
     serializer_class = serializers.HospitalSerializer
     pagination_class = DefaultPagination
     permission_classes = [IsAdminUser]
-    filter_backends = [SearchFilter]
+    filter_backends = [
+        SearchFilter,
+        OrderingFilter,
+        DjangoFilterBackend,
+    ]
     search_fields = ["name", "email"]
+    ordering_fields = ["name"]
+    filterset_fields = ["address"]
     queryset = models.Hospital.objects.all()
 
 
