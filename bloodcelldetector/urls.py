@@ -31,7 +31,11 @@ urlpatterns = [
     path("__debug__/", include("debug_toolbar.urls")),
     path("", include("lab.urls")),
     path("auth/jwt/create/", CustomTokenCreateView.as_view(), name="custom_register"),
-    path("auth/users/", CustomUserViewSet.as_view({"get": "list"}), name="user-list"),
+    path(
+        "auth/users/",
+        CustomUserViewSet.as_view({"get": "list", "post": "create"}),
+        name="user-list",
+    ),
     path("auth/", include("djoser.urls")),
     path("auth/", include("djoser.urls.jwt")),
 ]

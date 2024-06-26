@@ -5,6 +5,7 @@ from rest_framework.permissions import (
     IsAuthenticated,
     IsAdminUser,
 )
+from core.models import User
 from core.permissions import IsAdminOrReadOnly
 from lab import filters
 from . import models, serializers
@@ -14,7 +15,7 @@ from .pagination import DefaultPagination
 class HospitalViewSet(ModelViewSet):
     serializer_class = serializers.HospitalSerializer
     pagination_class = DefaultPagination
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAuthenticated]
     filter_backends = [
         SearchFilter,
         OrderingFilter,
@@ -23,7 +24,14 @@ class HospitalViewSet(ModelViewSet):
     search_fields = ["name", "email"]
     ordering_fields = ["name"]
     filterset_fields = ["address"]
-    queryset = models.Hospital.objects.all()
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_superuser:
+            return models.Hospital.objects.all()
+        else:
+            hospitals = models.Hospital.objects.filter(id=user.hospital_id)
+            return hospitals
 
 
 class BloodTestViewSet(ModelViewSet):
