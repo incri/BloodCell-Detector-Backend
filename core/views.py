@@ -32,4 +32,5 @@ class CustomUserViewSet(UserViewSet):
         elif user.is_hospital_admin:
             hospital_users = User.objects.filter(hospital=user.hospital)
             return hospital_users
-        return User.objects.filter(id=user.id)
+        else:
+            return User.objects.filter(id=user.id)
