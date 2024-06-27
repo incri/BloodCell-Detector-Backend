@@ -80,6 +80,7 @@ class CustomTokenCreateSerializer(serializers.Serializer):
                 "is_hospital_admin": user.is_hospital_admin,
                 "is_superuser": user.is_superuser,
                 "full_name": user.first_name + " " + user.last_name,
+                "hospital_id": user.hospital_id,
             },
         }
 
