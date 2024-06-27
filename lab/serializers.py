@@ -149,7 +149,6 @@ class PatientSerializer(serializers.ModelSerializer):
     id = serializers.UUIDField(read_only=True)
     blood_tests = BloodTestSerializer(many=True, read_only=True)
     address = AddressSerializer(read_only=True)
-    hospital = HospitalSerializer(read_only=True)
 
     class Meta:
         model = models.Patient
@@ -162,7 +161,6 @@ class PatientSerializer(serializers.ModelSerializer):
             "birth_date",
             "address",
             "blood_tests",
-            "hospital",
         ]
 
     def create(self, validated_data):

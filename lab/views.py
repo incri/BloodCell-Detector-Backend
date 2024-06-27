@@ -6,7 +6,6 @@ from rest_framework.permissions import (
     IsAdminUser,
 )
 from core.models import User
-from core.permissions import IsAdminOrReadOnly
 from lab import filters
 from . import models, serializers
 from .pagination import DefaultPagination
