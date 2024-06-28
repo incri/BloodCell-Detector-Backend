@@ -144,14 +144,17 @@ class BloodTestSerializer(serializers.ModelSerializer):
         return models.BloodTest.objects.create(patient_id=patient_id, **validated_data)
 
 
-class PatientSerializer(serializers.ModelSerializer):
+from rest_framework import serializers
+from .models import Patient
+from .serializers import BloodTestSerializer, AddressSerializer
 
+
+class PatientListSerializer(serializers.ModelSerializer):
     id = serializers.UUIDField(read_only=True)
-    blood_tests = BloodTestSerializer(many=True, read_only=True)
     address = AddressSerializer(read_only=True)
 
     class Meta:
-        model = models.Patient
+        model = Patient
         fields = [
             "id",
             "first_name",
@@ -160,7 +163,6 @@ class PatientSerializer(serializers.ModelSerializer):
             "phone",
             "birth_date",
             "address",
-            "blood_tests",
         ]
 
     def create(self, validated_data):
@@ -172,4 +174,23 @@ class PatientSerializer(serializers.ModelSerializer):
                 "You cannot create patient data for other hospitals."
             )
 
-        return models.Patient.objects.create(hospital_id=hospital_id, **validated_data)
+        return Patient.objects.create(hospital_id=hospital_id, **validated_data)
+
+
+class PatientDetailSerializer(serializers.ModelSerializer):
+    id = serializers.UUIDField(read_only=True)
+    blood_tests = BloodTestSerializer(many=True, read_only=True)
+    address = AddressSerializer(read_only=True)
+
+    class Meta:
+        model = Patient
+        fields = [
+            "id",
+            "first_name",
+            "last_name",
+            "email",
+            "phone",
+            "birth_date",
+            "address",
+            "blood_tests",
+        ]

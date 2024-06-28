@@ -115,7 +115,6 @@ class AddressViewSet(ModelViewSet):
 
 
 class PatientViewSet(ModelViewSet):
-    serializer_class = serializers.PatientSerializer
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_class = filters.PatientFilter
     pagination_class = DefaultPagination
@@ -128,6 +127,15 @@ class PatientViewSet(ModelViewSet):
         if user.is_superuser:
             return models.Patient.objects.all()
         return models.Patient.objects.filter(hospital_id=user.hospital_id)
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return serializers.PatientListSerializer
+        if self.action == "retrieve":
+            return serializers.PatientDetailSerializer
+        return (
+            serializers.PatientListSerializer
+        )  # Fallback serializer to avoid AssertionError
 
     def get_serializer_context(self):
         return {
