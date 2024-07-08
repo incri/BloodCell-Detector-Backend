@@ -38,8 +38,26 @@ class AddressSerializer(serializers.ModelSerializer):
         return models.Address.objects.create(patient_id=patient_id, **validated_data)
 
 
-class BloodTestImageDataSerializer(serializers.ModelSerializer):
+class BloodTestImageDataListSerializer(serializers.ListSerializer):
+    def create(self, validated_data):
+        blood_test_id = self.context["blood_test_id"]
+        user_hospital_id = self.context["request"].user.hospital.id
 
+        blood_test_images = []
+        for item in validated_data:
+            blood_test_hospital = item["blood_test"].patient.hospital.id
+            if str(blood_test_hospital) != str(user_hospital_id):
+                raise serializers.ValidationError(
+                    "You cannot create data for patients from other hospitals."
+                )
+            blood_test_images.append(
+                models.BloodTestImageData(blood_test_id=blood_test_id, **item)
+            )
+
+        return BloodTestImageData.objects.bulk_create(blood_test_images)
+
+
+class BloodTestImageDataSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.BloodTestImageData
         fields = [
@@ -47,20 +65,18 @@ class BloodTestImageDataSerializer(serializers.ModelSerializer):
             "image",
             "blood_test",
         ]
+        list_serializer_class = BloodTestImageDataListSerializer
 
-    def create(self, validated_data):
-        blood_test_id = self.context["blood_test_id"]
-        user_hospital_id = self.context["request"].user.hospital.id
-        blood_test_hospital = validated_data["blood_test"].patient.hospital.id
 
-        if str(blood_test_hospital) != str(user_hospital_id):
-            raise serializers.ValidationError(
-                "You cannot create data for patients from other hospitals."
-            )
-
-        return models.BloodTestImageData.objects.create(
-            blood_test_id=blood_test_id, **validated_data
-        )
+class BloodTestImageDataSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.BloodTestImageData
+        fields = [
+            "id",
+            "image",
+            "blood_test",
+        ]
+        list_serializer_class = BloodTestImageDataListSerializer
 
 
 class ResultImageDataSerializer(serializers.ModelSerializer):
@@ -145,7 +161,7 @@ class BloodTestSerializer(serializers.ModelSerializer):
 
 
 from rest_framework import serializers
-from .models import Patient
+from .models import BloodTestImageData, Patient
 from .serializers import BloodTestSerializer, AddressSerializer
 
 

@@ -1,5 +1,8 @@
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
+from rest_framework import status
+
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.permissions import (
     IsAuthenticated,
@@ -76,6 +79,21 @@ class BloodTestImageDataViewSet(ModelViewSet):
             "blood_test_id": self.kwargs["blood_tests_pk"],
             "request": self.request,
         }
+
+    def create(self, request, *args, **kwargs):
+        # Expecting files in request.FILES
+        files = request.FILES.getlist("image")
+        blood_test_id = self.kwargs["blood_tests_pk"]
+        data = [{"image": file, "blood_test": blood_test_id} for file in files]
+
+        serializer = self.get_serializer(data=data, many=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+
+        headers = self.get_success_headers(serializer.data)
+        return Response(
+            serializer.data, status=status.HTTP_201_CREATED, headers=headers
+        )
 
 
 class ResultImageDataViewSet(ModelViewSet):
