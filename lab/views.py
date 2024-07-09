@@ -2,6 +2,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 from rest_framework import status
+from rest_framework.decorators import action
 
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.permissions import (
@@ -94,6 +95,19 @@ class BloodTestImageDataViewSet(ModelViewSet):
         return Response(
             serializer.data, status=status.HTTP_201_CREATED, headers=headers
         )
+
+    @action(detail=False, methods=["post"], url_path="batch-delete")
+    def batch_delete(self, request, *args, **kwargs):
+        # Collect all image_ids from the request data
+        image_ids = request.data.getlist("image_ids")
+        if not image_ids:
+            return Response(
+                {"error": "No image IDs provided"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        images = models.BloodTestImageData.objects.filter(id__in=image_ids)
+        count, _ = images.delete()
+        return Response({"deleted": count}, status=status.HTTP_204_NO_CONTENT)
 
 
 class ResultImageDataViewSet(ModelViewSet):
