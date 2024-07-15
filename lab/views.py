@@ -1,4 +1,5 @@
 from django_filters.rest_framework import DjangoFilterBackend
+import requests
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 from rest_framework import status
@@ -108,8 +109,47 @@ class BloodTestImageDataViewSet(ModelViewSet):
         images = models.BloodTestImageData.objects.filter(id__in=image_ids)
         count, _ = images.delete()
         return Response({"deleted": count}, status=status.HTTP_204_NO_CONTENT)
+    
+    @action(detail=False, methods=['post'], url_path='images-for-bloodtest')
+    def images_for_bloodtest(self, request, *args, **kwargs):
+        bloodtest_id = request.data.get("bloodtest_id")
+        if not bloodtest_id:
+            return Response({"error": "Bloodtest ID not provided"}, status=status.HTTP_400_BAD_REQUEST)
 
+        try:
+            # Fetch images associated with the blood test ID
+            images = models.BloodTestImageData.objects.filter(blood_test_id=bloodtest_id)
+        except models.BloodTestImageData.DoesNotExist:
+            return Response({"error": "Blood test data not found"}, status=status.HTTP_404_NOT_FOUND)
 
+        # Construct image URLs
+        image_urls = [request.build_absolute_uri(image.image.url) for image in images]
+
+        # Prepare data to send to FastAPI
+        data = {
+            'image_urls': ','.join(image_urls)  # Convert list to comma-separated string
+        }
+
+        # Print the format of image URLs being sent
+        print(f"Sending image URLs to FastAPI: {data['image_urls']}")
+
+        # URL of your FastAPI endpoint for processing images
+        fastapi_url = 'http://127.0.0.1:7001/process-images/'
+
+        try:
+            # Send POST request to FastAPI
+            response = requests.post(fastapi_url, data=data)  # Send data as form data
+
+            # Check response status
+            response.raise_for_status()
+            
+            # Parse FastAPI response
+            fastapi_response = response.json()
+            return Response(fastapi_response, status=status.HTTP_200_OK)
+
+        except requests.exceptions.RequestException as e:
+            error_message = f"Error sending images to FastAPI: {str(e)}"
+            return Response({"error": error_message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 class ResultImageDataViewSet(ModelViewSet):
     serializer_class = serializers.ResultImageDataSerializer
     permission_classes = [IsAuthenticated]

@@ -78,6 +78,10 @@ class BloodTestImageDataSerializer(serializers.ModelSerializer):
         ]
         list_serializer_class = BloodTestImageDataListSerializer
 
+class BloodTestImageUrlSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.BloodTestImageData
+        fields = ["image"]
 
 class ResultImageDataSerializer(serializers.ModelSerializer):
 
