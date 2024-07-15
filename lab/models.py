@@ -94,4 +94,4 @@ class ResultImageData(models.Model):
     result = models.ForeignKey(
         Result, on_delete=models.CASCADE, related_name="result_images"
     )
-    image = models.ImageField(upload_to="lab/result-images")
+    image = models.URLField()

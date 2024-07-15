@@ -1,4 +1,7 @@
 from django_filters.rest_framework import DjangoFilterBackend
+from django.db import transaction
+
+from rest_framework.exceptions import ValidationError
 import requests
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
@@ -61,6 +64,29 @@ class BloodTestViewSet(ModelViewSet):
             "request": self.request,
         }
 
+class ResultViewSet(ModelViewSet):
+    serializer_class = serializers.ResultSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_class = filters.ResultFilter
+    pagination_class = DefaultPagination
+    search_fields = ["description"]
+    ordering_fields = ["created_at"]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_superuser:
+            return models.Result.objects.all()
+        return models.Result.objects.filter(
+            bloodtest__patient__hospital=user.hospital_id
+        )
+
+    def get_serializer_context(self):
+        return {
+            "blood_test_id": self.kwargs["blood_tests_pk"],
+            "request": self.request,
+        }
+
 
 class BloodTestImageDataViewSet(ModelViewSet):
     serializer_class = serializers.BloodTestImageDataSerializer
@@ -109,7 +135,7 @@ class BloodTestImageDataViewSet(ModelViewSet):
         images = models.BloodTestImageData.objects.filter(id__in=image_ids)
         count, _ = images.delete()
         return Response({"deleted": count}, status=status.HTTP_204_NO_CONTENT)
-    
+
     @action(detail=False, methods=['post'], url_path='images-for-bloodtest')
     def images_for_bloodtest(self, request, *args, **kwargs):
         bloodtest_id = request.data.get("bloodtest_id")
@@ -127,6 +153,7 @@ class BloodTestImageDataViewSet(ModelViewSet):
 
         # Prepare data to send to FastAPI
         data = {
+            'bloodtest_id': bloodtest_id,
             'image_urls': ','.join(image_urls)  # Convert list to comma-separated string
         }
 
@@ -142,14 +169,51 @@ class BloodTestImageDataViewSet(ModelViewSet):
 
             # Check response status
             response.raise_for_status()
-            
+
             # Parse FastAPI response
             fastapi_response = response.json()
-            return Response(fastapi_response, status=status.HTTP_200_OK)
+
+            # Use a transaction to ensure atomicity
+            with transaction.atomic():
+                # Save the results into the Django models
+                result_data = {
+                    'description': (
+                        f"RBC Count: {fastapi_response['rbc_count']}, "
+                        f"WBC Count: {fastapi_response['wbc_count']}, "
+                        f"Platelets Count: {fastapi_response['platelets_count']}"
+                    ),
+                    'bloodtest': bloodtest_id  # Ensure bloodtest_id is correctly passed here
+                }
+                result_serializer = serializers.ResultSerializer(data=result_data, context={'request': request, 'blood_test_id': bloodtest_id})
+                if result_serializer.is_valid():
+                    result = result_serializer.save()
+
+                    # Save the processed image links
+                    for image_url in fastapi_response['processed_images']:
+                        image_data = {
+                            'result': result.id,  # Ensure result.id is correctly set
+                            'image': image_url  # Use image_url field
+                        }
+                        image_serializer = serializers.ResultImageDataSerializer(data=image_data, context={'request': request, 'result_id': result.id})  # Pass result_id here
+                        if image_serializer.is_valid():
+                            image_serializer.save()
+                        else:
+                            raise ValidationError(image_serializer.errors)  # Raise ValidationError
+
+                    return Response(result_serializer.data, status=status.HTTP_201_CREATED)
+                else:
+                    raise ValidationError(result_serializer.errors)  # Raise ValidationError
 
         except requests.exceptions.RequestException as e:
             error_message = f"Error sending images to FastAPI: {str(e)}"
             return Response({"error": error_message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except ValidationError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
+
 class ResultImageDataViewSet(ModelViewSet):
     serializer_class = serializers.ResultImageDataSerializer
     permission_classes = [IsAuthenticated]
@@ -216,25 +280,3 @@ class PatientViewSet(ModelViewSet):
         }
 
 
-class ResultViewSet(ModelViewSet):
-    serializer_class = serializers.ResultSerializer
-    permission_classes = [IsAuthenticated]
-    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_class = filters.ResultFilter
-    pagination_class = DefaultPagination
-    search_fields = ["description"]
-    ordering_fields = ["created_at"]
-
-    def get_queryset(self):
-        user = self.request.user
-        if user.is_superuser:
-            return models.Result.objects.all()
-        return models.Result.objects.filter(
-            bloodtest__patient__hospital=user.hospital_id
-        )
-
-    def get_serializer_context(self):
-        return {
-            "blood_test_id": self.kwargs["blood_tests_pk"],
-            "request": self.request,
-        }
