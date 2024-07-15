@@ -67,21 +67,11 @@ class BloodTestImageDataSerializer(serializers.ModelSerializer):
         ]
         list_serializer_class = BloodTestImageDataListSerializer
 
-
-class BloodTestImageDataSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.BloodTestImageData
-        fields = [
-            "id",
-            "image",
-            "blood_test",
-        ]
-        list_serializer_class = BloodTestImageDataListSerializer
-
 class BloodTestImageUrlSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.BloodTestImageData
         fields = ["image"]
+
 
 class ResultImageDataSerializer(serializers.ModelSerializer):
 
@@ -94,8 +84,17 @@ class ResultImageDataSerializer(serializers.ModelSerializer):
         ]
 
     def create(self, validated_data):
-        result_id = self.context["result_id"]
-        user_hospital_id = self.context["request"].user.hospital.id
+        # Ensure result_id and user_hospital_id are safely accessed
+        result_id = self.context.get("result_id")
+        request = self.context.get("request")
+        
+        if not result_id:
+            raise serializers.ValidationError("result_id must be provided in the context.")
+
+        if not request:
+            raise serializers.ValidationError("request must be provided in the context.")
+
+        user_hospital_id = request.user.hospital.id
         result_hospital = validated_data["result"].bloodtest.patient.hospital.id
 
         if str(result_hospital) != str(user_hospital_id):
@@ -103,9 +102,8 @@ class ResultImageDataSerializer(serializers.ModelSerializer):
                 "You cannot create data for patients from other hospitals."
             )
 
-        return models.ResultImageData.objects.create(
-            result_id=result_id, **validated_data
-        )
+        return models.ResultImageData.objects.create(result_id=result_id, **validated_data)
+
 
 
 class ResultSerializer(serializers.ModelSerializer):
