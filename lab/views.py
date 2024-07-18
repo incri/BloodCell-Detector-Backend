@@ -1,5 +1,9 @@
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404, render
+from django.template import TemplateDoesNotExist
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db import transaction
+from django.template.loader import get_template
 
 from rest_framework.exceptions import ValidationError
 import requests
@@ -18,6 +22,8 @@ from lab import filters
 from . import models, serializers
 from .pagination import DefaultPagination
 
+from io import BytesIO
+from xhtml2pdf import pisa
 
 class HospitalViewSet(ModelViewSet):
     serializer_class = serializers.HospitalSerializer
@@ -83,10 +89,73 @@ class ResultViewSet(ModelViewSet):
 
     def get_serializer_context(self):
         return {
-            "blood_test_id": self.kwargs["blood_tests_pk"],
+            "blood_test_id": self.kwargs.get("blood_tests_pk"),
             "request": self.request,
         }
+    
+    @action(detail=True, methods=["get"], url_path="generate-report")
+    def generate_report(self, request, *args, **kwargs):
+        result_id = request.query_params.get('result_id')
+        # Now you can use result_id to fetch the relevant data and generate your report
 
+
+        # Optional: Validate result_id if required
+        if not result_id:
+            return Response({"error": "result_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        hospital_id = self.kwargs.get("hospital_pk")
+        print(hospital_id)
+
+        return self.generate_pdf_response(hospital_id, result_id)
+
+    def generate_pdf_response(self, hospital_id, result_id):
+        hospital = get_object_or_404(models.Hospital, id=hospital_id)
+        result = get_object_or_404(models.Result, id=result_id)
+        blood_test = result.bloodtest
+        patient = blood_test.patient
+        result_images = models.ResultImageData.objects.filter(result=result)
+
+        # print(result_images)
+
+        # Prepare data for rendering HTML template
+        context = {
+            'hospital': hospital,
+            'patient': patient,
+            'blood_test': blood_test,
+            'result': result,
+            'result_images' : result_images,
+        }
+
+        try:
+            # Render HTML content from template
+            template = get_template('report_template.html')
+            html_content = template.render(context)
+        except TemplateDoesNotExist:
+            return Response('Template not found', status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response(f'Error rendering template: {str(e)}', status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        # Create a BytesIO buffer to hold PDF data
+        buffer = BytesIO()
+
+        # Use pisa to convert HTML to PDF
+        try:
+            pisa_status = pisa.CreatePDF(
+                html_content.encode('UTF-8'),  # Ensure HTML content is encoded properly
+                dest=buffer
+            )
+            if pisa_status.err:
+                return Response('Failed to generate PDF', status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except Exception as e:
+            return Response(f'Error generating PDF: {str(e)}', status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        # Get the value of the BytesIO buffer and create the HttpResponse
+        pdf_data = buffer.getvalue()
+        buffer.close()
+
+        response = HttpResponse(pdf_data, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="{patient.first_name}_{patient.last_name}_report.pdf"'
+        return response
 
 class BloodTestImageDataViewSet(ModelViewSet):
     serializer_class = serializers.BloodTestImageDataSerializer
@@ -94,7 +163,6 @@ class BloodTestImageDataViewSet(ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        hospital_id = self.kwargs.get("hospital_pk")
 
         if user.is_superuser:
             return models.BloodTestImageData.objects.all()
