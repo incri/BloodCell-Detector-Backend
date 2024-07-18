@@ -95,7 +95,9 @@ class ResultViewSet(ModelViewSet):
     
     @action(detail=True, methods=["get"], url_path="generate-report")
     def generate_report(self, request, *args, **kwargs):
-        result_id = request.data.get('result_id')
+        result_id = request.query_params.get('result_id')
+        # Now you can use result_id to fetch the relevant data and generate your report
+
 
         # Optional: Validate result_id if required
         if not result_id:
