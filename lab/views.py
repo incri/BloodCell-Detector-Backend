@@ -217,13 +217,14 @@ class BloodTestImageDataViewSet(ModelViewSet):
         channel_layer = get_channel_layer()
 
         def send_progress(message):
+            print("reached")
             async_to_sync(channel_layer.group_send)(
-                f'progress',
-                {
-                    'type': 'send_progress',
-                    'message': message
-                }
-            )
+            'progress_group',  # Ensure this matches the group name used in your consumer
+            {
+                'type': 'progress_message',  # Must match the method name in ProgressConsumer
+                'message': message
+            }
+        )
 
         try:
             # Fetch images associated with the blood test ID
@@ -239,6 +240,8 @@ class BloodTestImageDataViewSet(ModelViewSet):
             'bloodtest_id': bloodtest_id,
             'image_urls': ','.join(image_urls)  # Convert list to comma-separated string
         }
+
+        print("sending message")
 
         send_progress("Sending request to blood cell count API")
 
