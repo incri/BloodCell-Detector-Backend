@@ -24,6 +24,9 @@ from .pagination import DefaultPagination
 
 from io import BytesIO
 from xhtml2pdf import pisa
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+
 
 class HospitalViewSet(ModelViewSet):
     serializer_class = serializers.HospitalSerializer
@@ -204,11 +207,24 @@ class BloodTestImageDataViewSet(ModelViewSet):
         count, _ = images.delete()
         return Response({"deleted": count}, status=status.HTTP_204_NO_CONTENT)
 
+
     @action(detail=False, methods=['post'], url_path='images-for-bloodtest')
     def images_for_bloodtest(self, request, *args, **kwargs):
         bloodtest_id = request.data.get("bloodtest_id")
         if not bloodtest_id:
             return Response({"error": "Bloodtest ID not provided"}, status=status.HTTP_400_BAD_REQUEST)
+
+        channel_layer = get_channel_layer()
+
+        def send_progress(message):
+            print("reached")
+            async_to_sync(channel_layer.group_send)(
+            'progress_group',  # Ensure this matches the group name used in your consumer
+            {
+                'type': 'progress_message',  # Must match the method name in ProgressConsumer
+                'message': message
+            }
+        )
 
         try:
             # Fetch images associated with the blood test ID
@@ -225,58 +241,99 @@ class BloodTestImageDataViewSet(ModelViewSet):
             'image_urls': ','.join(image_urls)  # Convert list to comma-separated string
         }
 
-        # Print the format of image URLs being sent
-        print(f"Sending image URLs to FastAPI: {data['image_urls']}")
+        print("sending message")
 
-        # URL of your FastAPI endpoint for processing images
-        fastapi_url = 'http://127.0.0.1:7001/process-images/'
+        send_progress("Sending request to blood cell count API")
+
+        # URL of your FastAPI endpoints
+        blood_count_api_url = 'http://127.0.0.1:7001/process-images/'
+        cell_type_api_url = 'http://127.0.0.1:7001/process-blood-types-images/'
 
         try:
-            # Send POST request to FastAPI
-            response = requests.post(fastapi_url, data=data)  # Send data as form data
+            # Send POST request to blood cell count FastAPI
+            response_blood_count = requests.post(blood_count_api_url, data=data)  # Send data as form data
+            response_blood_count.raise_for_status()
+            blood_count_response = response_blood_count.json()
 
-            # Check response status
-            response.raise_for_status()
+            send_progress("Received response from blood cell count API")
 
-            # Parse FastAPI response
-            fastapi_response = response.json()
+            # Prepare data for the second FastAPI request using the first response
+            data['processed_images'] = ','.join(blood_count_response['processed_images'])
+
+            send_progress("Sending request to red blood cell type count API")
+
+            # Send POST request to cell type count FastAPI
+            response_cell_type = requests.post(cell_type_api_url, data=data)  # Send data as form data
+            response_cell_type.raise_for_status()
+            cell_type_response = response_cell_type.json()
+
+            send_progress("Received response from red blood cell type count API")
+
+            # Combine the responses
+            combined_description = (
+                f"RBC Count: {blood_count_response['rbc_count']}, "
+                f"WBC Count: {blood_count_response['wbc_count']}, "
+                f"Platelets Count: {blood_count_response['platelets_count']}, "
+                f"Normal Cell Count: {cell_type_response['normal_cell_count']}, "
+                f"Macrocyte Count: {cell_type_response['macrocyte_count']}, "
+                f"Microcyte Count: {cell_type_response['microcyte_count']}, "
+                f"Spherocyte Count: {cell_type_response['spherocyte_count']}, "
+                f"Target Cell Count: {cell_type_response['target_cell_count']}, "
+                f"Stomatocyte Count: {cell_type_response['stomatocyte_count']}, "
+                f"Ovalocyte Count: {cell_type_response['ovalocyte_count']}, "
+                f"Teardrop Count: {cell_type_response['teardrop_count']}, "
+                f"Burr Cell Count: {cell_type_response['burr_cell_count']}, "
+                f"Schistocyte Count: {cell_type_response['schistocyte_count']}, "
+                f"Uncategorized Count: {cell_type_response['uncategorised_count']}, "
+                f"Hypochromia Count: {cell_type_response['hypochromia_count']}, "
+                f"Elliptocyte Count: {cell_type_response['elliptocyte_count']}, "
+                f"Pencil Count: {cell_type_response['pencil_count']}, "
+                f"Spero Bulat Count: {cell_type_response['spero_bulat_count']}, "
+                f"Acantocyte Count: {cell_type_response['acantocyte_count']}"
+            )
 
             # Use a transaction to ensure atomicity
             with transaction.atomic():
                 # Save the results into the Django models
                 result_data = {
-                    'description': (
-                        f"RBC Count: {fastapi_response['rbc_count']}, "
-                        f"WBC Count: {fastapi_response['wbc_count']}, "
-                        f"Platelets Count: {fastapi_response['platelets_count']}"
-                    ),
-                    'bloodtest': bloodtest_id  # Ensure bloodtest_id is correctly passed here
+                    'description': combined_description,
+                    'bloodtest': bloodtest_id
                 }
                 result_serializer = serializers.ResultSerializer(data=result_data, context={'request': request, 'blood_test_id': bloodtest_id})
                 if result_serializer.is_valid():
                     result = result_serializer.save()
 
-                    # Save the processed image links
-                    for image_url in fastapi_response['processed_images']:
+                    # Save the processed image links from both responses
+                    processed_images = blood_count_response['processed_images'] + cell_type_response['processed_images']
+                    for image_url in processed_images:
                         image_data = {
-                            'result': result.id,  # Ensure result.id is correctly set
-                            'image': image_url  # Use image_url field
+                            'result': result.id,
+                            'image': image_url
                         }
-                        image_serializer = serializers.ResultImageDataSerializer(data=image_data, context={'request': request, 'result_id': result.id})  # Pass result_id here
+                        image_serializer = serializers.ResultImageDataSerializer(data=image_data, context={'request': request, 'result_id': result.id})
                         if image_serializer.is_valid():
                             image_serializer.save()
                         else:
-                            raise ValidationError(image_serializer.errors)  # Raise ValidationError
+                            raise ValidationError(image_serializer.errors)
+
+                    send_progress("Processing complete")
 
                     return Response(result_serializer.data, status=status.HTTP_201_CREATED)
                 else:
-                    raise ValidationError(result_serializer.errors)  # Raise ValidationError
+                    raise ValidationError(result_serializer.errors)
 
         except requests.exceptions.RequestException as e:
             error_message = f"Error sending images to FastAPI: {str(e)}"
+            send_progress(error_message)
             return Response({"error": error_message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         except ValidationError as e:
+            send_progress(str(e))
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            error_message = f"Unexpected error: {str(e)}"
+            send_progress(error_message)
+            return Response({"error": error_message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 
