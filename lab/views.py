@@ -254,6 +254,7 @@ class BloodTestImageDataViewSet(ModelViewSet):
             response_blood_count = requests.post(blood_count_api_url, data=data)  # Send data as form data
             response_blood_count.raise_for_status()
             blood_count_response = response_blood_count.json()
+            blood_count = blood_count_response["detected"]
 
             send_progress("Received response from blood cell count API")
 
@@ -266,30 +267,32 @@ class BloodTestImageDataViewSet(ModelViewSet):
             response_cell_type = requests.post(cell_type_api_url, data=data)  # Send data as form data
             response_cell_type.raise_for_status()
             cell_type_response = response_cell_type.json()
+            cell_type = cell_type_response["detected"]
+
 
             send_progress("Received response from red blood cell type count API")
 
             # Combine the responses
             combined_description = (
-                f"RBC Count: {blood_count_response['rbc_count']}, "
-                f"WBC Count: {blood_count_response['wbc_count']}, "
-                f"Platelets Count: {blood_count_response['platelets_count']}, "
-                f"Normal Cell Count: {cell_type_response['normal_cell_count']}, "
-                f"Macrocyte Count: {cell_type_response['macrocyte_count']}, "
-                f"Microcyte Count: {cell_type_response['microcyte_count']}, "
-                f"Spherocyte Count: {cell_type_response['spherocyte_count']}, "
-                f"Target Cell Count: {cell_type_response['target_cell_count']}, "
-                f"Stomatocyte Count: {cell_type_response['stomatocyte_count']}, "
-                f"Ovalocyte Count: {cell_type_response['ovalocyte_count']}, "
-                f"Teardrop Count: {cell_type_response['teardrop_count']}, "
-                f"Burr Cell Count: {cell_type_response['burr_cell_count']}, "
-                f"Schistocyte Count: {cell_type_response['schistocyte_count']}, "
-                f"Uncategorized Count: {cell_type_response['uncategorised_count']}, "
-                f"Hypochromia Count: {cell_type_response['hypochromia_count']}, "
-                f"Elliptocyte Count: {cell_type_response['elliptocyte_count']}, "
-                f"Pencil Count: {cell_type_response['pencil_count']}, "
-                f"Spero Bulat Count: {cell_type_response['spero_bulat_count']}, "
-                f"Acantocyte Count: {cell_type_response['acantocyte_count']}"
+                f"RBC Count: {blood_count['rbc_count']}, "
+                f"WBC Count: {blood_count['wbc_count']}, "
+                f"Platelets Count: {blood_count['platelets_count']}, "
+                f"Normal Cell Count: {cell_type['normal_cell_count']}, "
+                f"Macrocyte Count: {cell_type['macrocyte_count']}, "
+                f"Microcyte Count: {cell_type['microcyte_count']}, "
+                f"Spherocyte Count: {cell_type['spherocyte_count']}, "
+                f"Target Cell Count: {cell_type['target_cell_count']}, "
+                f"Stomatocyte Count: {cell_type['stomatocyte_count']}, "
+                f"Ovalocyte Count: {cell_type['ovalocyte_count']}, "
+                f"Teardrop Count: {cell_type['teardrop_count']}, "
+                f"Burr Cell Count: {cell_type['burr_cell_count']}, "
+                f"Schistocyte Count: {cell_type['schistocyte_count']}, "
+                f"Uncategorized Count: {cell_type['uncategorised_count']}, "
+                f"Hypochromia Count: {cell_type['hypochromia_count']}, "
+                f"Elliptocyte Count: {cell_type['elliptocyte_count']}, "
+                f"Pencil Count: {cell_type['pencil_count']}, "
+                f"Spero Bulat Count: {cell_type['spero_bulat_count']}, "
+                f"Acantocyte Count: {cell_type['acantocyte_count']}"
             )
 
             # Use a transaction to ensure atomicity
