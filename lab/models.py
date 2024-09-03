@@ -95,3 +95,11 @@ class ResultImageData(models.Model):
         Result, on_delete=models.CASCADE, related_name="result_images"
     )
     image = models.URLField()
+
+class LabResultDetection(models.Model):
+    result = models.ForeignKey(Result, on_delete=models.CASCADE, related_name='detections')
+    detection_type = models.CharField(max_length=50)
+    detection_value = models.IntegerField()
+
+    def __str__(self):
+        return f"{self.detection_type} for Result {self.result.id}"
