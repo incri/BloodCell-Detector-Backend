@@ -104,16 +104,21 @@ class ResultImageDataSerializer(serializers.ModelSerializer):
 
         return models.ResultImageData.objects.create(result_id=result_id, **validated_data)
 
+class ResultDetectionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.LabResultDetection
+        fields = ["id", "detection_type", "detection_value"]
 
 
 class ResultSerializer(serializers.ModelSerializer):
 
     id = serializers.UUIDField(read_only=True)
     result_images = ResultImageDataSerializer(many=True, read_only=True)
+    detections = ResultDetectionSerializer(many=True, read_only=True)
 
     class Meta:
         model = models.Result
-        fields = ["id", "created_at", "description", "result_images", "bloodtest"]
+        fields = ["id", "created_at", "description", "result_images", "bloodtest", "detections"]
 
     def create(self, validated_data):
         blood_test_id = self.context["blood_test_id"]
