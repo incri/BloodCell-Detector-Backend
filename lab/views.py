@@ -27,6 +27,19 @@ from xhtml2pdf import pisa
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 
+from io import BytesIO
+from django.http import HttpResponse
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework import status
+from django.shortcuts import get_object_or_404
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle
+from reportlab.lib import colors
+from reportlab.lib.units import inch
+from django.core.files.base import ContentFile
+
 
 class HospitalViewSet(ModelViewSet):
     serializer_class = serializers.HospitalSerializer
@@ -99,15 +112,12 @@ class ResultViewSet(ModelViewSet):
     @action(detail=True, methods=["get"], url_path="generate-report")
     def generate_report(self, request, *args, **kwargs):
         result_id = request.query_params.get('result_id')
-        # Now you can use result_id to fetch the relevant data and generate your report
-
-
-        # Optional: Validate result_id if required
+        
+        # Validate result_id
         if not result_id:
             return Response({"error": "result_id is required"}, status=status.HTTP_400_BAD_REQUEST)
 
         hospital_id = self.kwargs.get("hospital_pk")
-        print(hospital_id)
 
         return self.generate_pdf_response(hospital_id, result_id)
 
@@ -117,40 +127,140 @@ class ResultViewSet(ModelViewSet):
         blood_test = result.bloodtest
         patient = blood_test.patient
         result_images = models.ResultImageData.objects.filter(result=result)
+        detections = models.LabResultDetection.objects.filter(result=result)
+        non_zero_detections = [(detection.detection_type, detection.detection_value) for detection in detections if detection.detection_value > 0]
 
-        # print(result_images)
-
-        # Prepare data for rendering HTML template
-        context = {
-            'hospital': hospital,
-            'patient': patient,
-            'blood_test': blood_test,
-            'result': result,
-            'result_images' : result_images,
-        }
-
-        try:
-            # Render HTML content from template
-            template = get_template('report_template.html')
-            html_content = template.render(context)
-        except TemplateDoesNotExist:
-            return Response('Template not found', status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            return Response(f'Error rendering template: {str(e)}', status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         # Create a BytesIO buffer to hold PDF data
         buffer = BytesIO()
 
-        # Use pisa to convert HTML to PDF
-        try:
-            pisa_status = pisa.CreatePDF(
-                html_content.encode('UTF-8'),  # Ensure HTML content is encoded properly
-                dest=buffer
-            )
-            if pisa_status.err:
-                return Response('Failed to generate PDF', status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        except Exception as e:
-            return Response(f'Error generating PDF: {str(e)}', status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        # Create the PDF document
+        doc = SimpleDocTemplate(buffer, pagesize=letter)
+
+        # Create a stylesheet for styling
+        styles = getSampleStyleSheet()
+        style_header = ParagraphStyle('Header', parent=styles['Heading1'], fontSize=24, alignment=1, spaceAfter=12)
+        style_section_heading = ParagraphStyle('SectionHeading', parent=styles['Heading2'], fontSize=20, spaceAfter=6)
+        style_section_content = ParagraphStyle('SectionContent', parent=styles['Normal'], fontSize=12, spaceAfter=6)
+        style_footer = ParagraphStyle('Footer', parent=styles['Heading1'], fontSize=18, alignment=1, spaceBefore=40, borderTop='1px solid #cccccc', spaceAfter=12)
+
+        # Content list
+        content = []
+
+        # Header
+        content.append(Paragraph(hospital.name, style_header))
+        content.append(Paragraph(hospital.address, styles['Normal']))
+        content.append(Paragraph(f"Phone: {hospital.phone}", styles['Normal']))
+        content.append(Paragraph(f"Email: {hospital.email}", styles['Normal']))
+        content.append(Spacer(1, 12))
+
+        # Patient Information
+        content.append(Paragraph("Patient Information", style_section_heading))
+        patient_info = [
+            [f"Name:", f"{patient.first_name} {patient.last_name}"],
+            [f"Email:", f"{patient.email}"],
+            [f"Phone:", f"{patient.phone}"],
+            [f"Birth Date:", f"{patient.birth_date}"]
+        ]
+        table = Table(patient_info, colWidths=[2*inch, 3*inch])
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (-1, -1), 'Helvetica')
+        ]))
+        content.append(table)
+        content.append(Spacer(1, 12))
+
+        # Blood Test Information
+        content.append(Paragraph("Test Details", style_section_heading))
+        blood_test_info = [
+            [f"", blood_test.title],
+            [f"", blood_test.description],
+            [f"Registered At:", blood_test.created_at],
+        ]
+        table = Table(blood_test_info, colWidths=[2*inch, 3*inch])
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (-1, -1), 'Helvetica')
+        ]))
+        content.append(table)
+        content.append(Spacer(1, 12))
+
+        # Result Information
+        result_info = [
+            [f"Summary:", result.description],
+        ]
+        table = Table(result_info, colWidths=[2*inch, 3*inch])
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (-1, -1), 'Helvetica')
+        ]))
+        content.append(table)
+        content.append(Spacer(1, 12))
+
+         # Detection Information
+        detection_info = [['Cells Type', 'Value']] + [[detection_type, detection_value] for detection_type, detection_value in non_zero_detections]
+        if detection_info:
+            detection_table = Table(detection_info, colWidths=[2*inch, 2.5*inch])
+            detection_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.whitesmoke),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),  # Header text color
+                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+                ('BOX', (0, 0), (-1, -1), 1, colors.black),  # Add box around table
+                ('GRID', (0, 0), (-1, -1), 1, colors.black),  # Add grid lines inside table
+                ('BACKGROUND', (0, 0), (-1, 0), colors.gray)  # Background for header row
+            ]))
+            content.append(detection_table)
+        else:
+            content.append(Paragraph("No detection information available.", styles['Normal']))
+        content.append(Spacer(1, 12))
+
+        # Result Images (3 images per row with spacing)
+        image_table_data = []
+        row = []
+        for i, img in enumerate(result_images):
+            img_file = img.image
+            if isinstance(img_file, str):  # Handle file path
+                try:
+                    image = Image(img_file, width=2*inch, height=2*inch)
+                except Exception as e:
+                    print(f"Error loading image {img_file}: {e}")
+                    continue
+            elif hasattr(img_file, 'read'):  # Handle file-like object
+                image = Image(BytesIO(img_file.read()), width=2*inch, height=2*inch)
+            else:
+                continue
+            
+            # Append images to rows, 3 per row
+            if i % 3 == 0 and row:
+                image_table_data.append(row)
+                row = []
+            row.append(image)
+        
+        if row:
+            image_table_data.append(row)
+
+        if image_table_data:
+            image_table = Table(image_table_data, colWidths=[2*inch]*3, rowHeights=[2*inch]*len(image_table_data))  # 3 columns
+            image_table.setStyle(TableStyle([
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ]))
+            content.append(image_table)
+        
+        # Footer
+        content.append(Spacer(1, 12))
+        content.append(Paragraph("End of Report", style_footer))
+
+        # Build the PDF
+        doc.build(content)
 
         # Get the value of the BytesIO buffer and create the HttpResponse
         pdf_data = buffer.getvalue()
