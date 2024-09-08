@@ -54,7 +54,7 @@ class BloodTestImageDataListSerializer(serializers.ListSerializer):
                 models.BloodTestImageData(blood_test_id=blood_test_id, **item)
             )
 
-        return BloodTestImageData.objects.bulk_create(blood_test_images)
+        return models.BloodTestImageData.objects.bulk_create(blood_test_images)
 
 
 class BloodTestImageDataSerializer(serializers.ModelSerializer):
@@ -166,10 +166,27 @@ class BloodTestSerializer(serializers.ModelSerializer):
 
         return models.BloodTest.objects.create(patient_id=patient_id, **validated_data)
 
+class BloodTestListSerializer(serializers.ModelSerializer):
 
-from rest_framework import serializers
-from .models import BloodTestImageData, Patient
-from .serializers import BloodTestSerializer, AddressSerializer
+    id = serializers.UUIDField(read_only=True)
+    result_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = models.BloodTest
+        fields = [
+            "id",
+            "title",
+            "description",
+            "result_count",
+            "patient",
+        ]
+
+    def get_result_count(self, obj):
+        # Return the count of related results
+        return obj.results.count()
+
+    
+
 
 
 class PatientListSerializer(serializers.ModelSerializer):
@@ -177,7 +194,7 @@ class PatientListSerializer(serializers.ModelSerializer):
     address = AddressSerializer(read_only=True)
 
     class Meta:
-        model = Patient
+        model = models.Patient
         fields = [
             "id",
             "first_name",
@@ -197,16 +214,16 @@ class PatientListSerializer(serializers.ModelSerializer):
                 "You cannot create patient data for other hospitals."
             )
 
-        return Patient.objects.create(hospital_id=hospital_id, **validated_data)
+        return models.Patient.objects.create(hospital_id=hospital_id, **validated_data)
 
 
 class PatientDetailSerializer(serializers.ModelSerializer):
     id = serializers.UUIDField(read_only=True)
-    blood_tests = BloodTestSerializer(many=True, read_only=True)
+    blood_tests = BloodTestListSerializer(many=True, read_only=True)
     address = AddressSerializer(read_only=True)
 
     class Meta:
-        model = Patient
+        model = models.Patient
         fields = [
             "id",
             "first_name",
