@@ -22,7 +22,7 @@ from core.views import (
     CustomUserViewSet,
 )
 
-
+#comments
 admin.site.site_header = "BCD Admin Dashboard"
 admin.site.index_title = "Admin"
 
