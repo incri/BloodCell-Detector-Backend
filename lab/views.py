@@ -484,5 +484,21 @@ class PatientViewSet(ModelViewSet):
             "hospital_id": self.kwargs["hospital_pk"],
             "request": self.request,
         }
+    
+    def create(self, request, *args, **kwargs):
+        # Extract patient data from the request
+        patient_data = request.data
+
+        # Validate and create the patient instance
+        serializer = self.get_serializer(data=patient_data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+
+        # Automatically create an empty Address instance for the patient
+        models.Address.objects.create(patient=serializer.instance)
+
+        # Prepare the response
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
