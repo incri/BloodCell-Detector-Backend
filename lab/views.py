@@ -506,3 +506,33 @@ class PatientViewSet(ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
+    def update(self, request, *args, **kwargs):
+            # Extract patient and address data from the request
+            patient_data = request.data
+            address_data = patient_data.pop('address', {})  # Pop address data out of patient data
+
+            try:
+                # Begin atomic transaction
+                with transaction.atomic():
+                    # Validate and update the patient instance
+                    partial = False
+                    instance = self.get_object()
+                    serializer = self.get_serializer(instance, data=patient_data, partial=partial)
+                    serializer.is_valid(raise_exception=True)
+                    self.perform_update(serializer)
+
+                    # Update the Address instance if address data is provided
+                    if address_data:
+                        address_instance, created = models.Address.objects.update_or_create(
+                            patient=serializer.instance,
+                            defaults=address_data
+                        )
+                        
+                    # If the Address instance was not created, it should be updated
+
+                # Prepare the response
+                return Response(serializer.data, status=status.HTTP_200_OK)
+
+            except Exception as e:
+                # Handle exceptions (optional)
+                return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
