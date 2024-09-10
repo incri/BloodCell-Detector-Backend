@@ -486,16 +486,20 @@ class PatientViewSet(ModelViewSet):
         }
     
     def create(self, request, *args, **kwargs):
-        # Extract patient data from the request
+        # Extract patient and address data from the request
         patient_data = request.data
+        address_data = patient_data.pop('address', {})  # Pop address data out of patient data
 
-        # Validate and create the patient instance
-        serializer = self.get_serializer(data=patient_data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
+        # Begin atomic transaction
+        with transaction.atomic():
+            # Validate and create the patient instance
+            serializer = self.get_serializer(data=patient_data)
+            serializer.is_valid(raise_exception=True)
+            self.perform_create(serializer)
 
-        # Automatically create an empty Address instance for the patient
-        models.Address.objects.create(patient=serializer.instance)
+            # Automatically create the Address instance for the patient if address data is provided
+            if address_data:
+                models.Address.objects.create(patient=serializer.instance, **address_data)
 
         # Prepare the response
         headers = self.get_success_headers(serializer.data)
