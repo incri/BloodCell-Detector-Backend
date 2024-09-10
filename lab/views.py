@@ -484,5 +484,55 @@ class PatientViewSet(ModelViewSet):
             "hospital_id": self.kwargs["hospital_pk"],
             "request": self.request,
         }
+    
+    def create(self, request, *args, **kwargs):
+        # Extract patient and address data from the request
+        patient_data = request.data
+        address_data = patient_data.pop('address', {})  # Pop address data out of patient data
+
+        # Begin atomic transaction
+        with transaction.atomic():
+            # Validate and create the patient instance
+            serializer = self.get_serializer(data=patient_data)
+            serializer.is_valid(raise_exception=True)
+            self.perform_create(serializer)
+
+            # Automatically create the Address instance for the patient if address data is provided
+            if address_data:
+                models.Address.objects.create(patient=serializer.instance, **address_data)
+
+        # Prepare the response
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
+    def update(self, request, *args, **kwargs):
+            # Extract patient and address data from the request
+            patient_data = request.data
+            address_data = patient_data.pop('address', {})  # Pop address data out of patient data
+
+            try:
+                # Begin atomic transaction
+                with transaction.atomic():
+                    # Validate and update the patient instance
+                    partial = False
+                    instance = self.get_object()
+                    serializer = self.get_serializer(instance, data=patient_data, partial=partial)
+                    serializer.is_valid(raise_exception=True)
+                    self.perform_update(serializer)
+
+                    # Update the Address instance if address data is provided
+                    if address_data:
+                        address_instance, created = models.Address.objects.update_or_create(
+                            patient=serializer.instance,
+                            defaults=address_data
+                        )
+                        
+                    # If the Address instance was not created, it should be updated
+
+                # Prepare the response
+                return Response(serializer.data, status=status.HTTP_200_OK)
+
+            except Exception as e:
+                # Handle exceptions (optional)
+                return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
