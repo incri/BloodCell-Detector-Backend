@@ -71,6 +71,8 @@ class CustomTokenCreateSerializer(serializers.Serializer):
             raise serializers.ValidationError(msg, code="authorization")
 
         refresh = RefreshToken.for_user(user)
+        base_url = "http://127.0.0.1:8000"
+        profile_image_url = f"{base_url}{user.profile_image.url}" if user.profile_image else None
 
         data = {
             "refresh": str(refresh),
@@ -83,6 +85,7 @@ class CustomTokenCreateSerializer(serializers.Serializer):
                 "is_superuser": user.is_superuser,
                 "full_name": user.first_name + " " + user.last_name,
                 "hospital_id": user.hospital_id,
+                "profile_image": profile_image_url,
             },
         }
 
