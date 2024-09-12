@@ -19,6 +19,7 @@ class UserCreateSerializer(BaseUserCreateSerializer):
             "last_name",
             "hospital",
             "is_hospital_admin",
+            "profile_image",
         ]
 
     def create(self, validated_data):
@@ -41,6 +42,7 @@ class UserSerializer(BaseUserSerializer):
             "last_name",
             "hospital",
             "is_hospital_admin",
+            "profile_image",
         ]
 
 
